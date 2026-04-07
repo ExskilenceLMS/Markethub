@@ -17,19 +17,31 @@
       "required": true,
       "requiresFlask": false,
       "testFile": "testing_config/py_tests/task.py",
-      "timeout": 30000,
-      "points": 40,
+      "timeout": 45000,
+      "points": 50,
       "runTests": {
-        "test_api_health_returns_200_with_standard_success_response": "Health API Standard Envelope",
-        "test_task_one_layered_structure_present": "Task 1 Layered Package Layout"
+        "test_register_customer_success": "Register Customer (JSON API)",
+        "test_register_rejects_self_register_non_customer_role": "Reject Non-Customer Self-Register",
+        "test_login_success_sets_session_cookie": "Login Success and Session",
+        "test_auth_me_returns_401_when_unauthenticated": "Me Endpoint Requires Auth",
+        "test_logout_clears_session": "Logout Clears Session",
+        "test_login_invalid_credentials_returns_generic_error": "Invalid Login Generic Error"
       },
       "descriptions": {
-        "test_api_health_returns_200_with_standard_success_response": "Verifies GET /api/health returns HTTP 200 and JSON with success=true, a message, and data.status equal to ok per the standard success_response helper.",
-        "test_task_one_layered_structure_present": "Verifies Task 1 folder layout: routes, services, repositories, models, and config packages with __init__.py, plus utils/response.py and wired health route/service modules."
+        "test_register_customer_success": "Verifies POST /api/auth/register with role customer returns 201, success envelope, public user fields, and no password material.",
+        "test_register_rejects_self_register_non_customer_role": "Verifies POST /api/auth/register with role admin (or other non-customer) is rejected with 400 and validation messaging.",
+        "test_login_success_sets_session_cookie": "Verifies POST /api/auth/login after register returns 200 and subsequent GET /api/auth/me returns the same user (cookie session).",
+        "test_auth_me_returns_401_when_unauthenticated": "Verifies GET /api/auth/me without session returns 401 and standard error JSON.",
+        "test_logout_clears_session": "Verifies POST /api/auth/logout clears session so GET /api/auth/me returns 401.",
+        "test_login_invalid_credentials_returns_generic_error": "Verifies wrong password yields 400 and the generic Invalid email or password message."
       },
       "error_messages": {
-        "test_api_health_returns_200_with_standard_success_response": "Health endpoint must return 200 with the standard success JSON envelope (success, message, data.status ok).",
-        "test_task_one_layered_structure_present": "Layered monolith folders and health wiring files from Task 1 must exist under exskilence_project."
+        "test_register_customer_success": "Customer registration must return 201 with public user JSON only.",
+        "test_register_rejects_self_register_non_customer_role": "Self-registration must not allow admin/seller roles.",
+        "test_login_success_sets_session_cookie": "Valid login must establish a session usable by GET /api/auth/me.",
+        "test_auth_me_returns_401_when_unauthenticated": "GET /api/auth/me without login must return 401.",
+        "test_logout_clears_session": "After logout, GET /api/auth/me must return 401.",
+        "test_login_invalid_credentials_returns_generic_error": "Invalid credentials must return the generic login error message."
       }
     },
     "dynamic": {
@@ -38,14 +50,14 @@
       "flaskConfig": {
         "appPath": "app.py",
         "port": 5000,
-        "startupTimeout": 15000
+        "startupTimeout": 20000
       },
       "baseUrl": "http://localhost:5000",
       "tests": [
         {
           "isMandatory": true,
-          "name": "Health API visible in browser",
-          "description": "Loads /api/health and confirms the page URL and document body render (JSON health check for Task 1).",
+          "name": "Health JSON endpoint reachable",
+          "description": "Confirms the app serves JSON at /api/health (baseline for Task 3 API app).",
           "path": "/api/health",
           "captureScreenshot": true,
           "actions": [],
@@ -53,12 +65,12 @@
             {
               "type": "url",
               "value": "/api/health",
-              "error_message": "Expected URL to end with /api/health"
+              "error_message": "Expected URL for health check"
             },
             {
               "type": "visible",
               "selector": "body",
-              "error_message": "Response body should be visible"
+              "error_message": "Health response body should be visible"
             },
             {
               "type": "exists",
@@ -69,9 +81,9 @@
         },
         {
           "isMandatory": true,
-          "name": "Unknown API path returns error JSON body",
-          "description": "Navigates to a non-existent /api route and confirms the browser shows a body (standard JSON error envelope from global 404 handler).",
-          "path": "/api/__validation_missing_route__",
+          "name": "Auth me unauthenticated returns JSON error",
+          "description": "GET /api/auth/me without cookies returns JSON error in the browser (Task 3 session guard).",
+          "path": "/api/auth/me",
           "captureScreenshot": true,
           "actions": [
             {
@@ -82,18 +94,18 @@
           "assertions": [
             {
               "type": "url",
-              "value": "/api/__validation_missing_route__",
-              "error_message": "Expected to remain on the unknown API path"
+              "value": "/api/auth/me",
+              "error_message": "Expected URL for /api/auth/me"
             },
             {
               "type": "visible",
               "selector": "body",
-              "error_message": "Error JSON response body should be visible"
+              "error_message": "Error JSON body should be visible"
             },
             {
               "type": "exists",
               "selector": "body",
-              "error_message": "Document body must exist for 404 JSON"
+              "error_message": "Document body must exist"
             }
           ]
         }
