@@ -1,0 +1,103 @@
+{
+  "id": "task",
+  "validation": {
+    "minScore": 70,
+    "static": {
+      "required": false,
+      "html": {
+        "isMandatory": false,
+        "rules": []
+      },
+      "css": {
+        "isMandatory": false,
+        "rules": []
+      }
+    },
+    "pytest": {
+      "required": true,
+      "requiresFlask": false,
+      "testFile": "testing_config/py_tests/task.py",
+      "timeout": 30000,
+      "points": 40,
+      "runTests": {
+        "test_api_health_returns_200_with_standard_success_response": "Health API Standard Envelope",
+        "test_task_one_layered_structure_present": "Task 1 Layered Package Layout"
+      },
+      "descriptions": {
+        "test_api_health_returns_200_with_standard_success_response": "Verifies GET /api/health returns HTTP 200 and JSON with success=true, a message, and data.status equal to ok per the standard success_response helper.",
+        "test_task_one_layered_structure_present": "Verifies Task 1 folder layout: routes, services, repositories, models, and config packages with __init__.py, plus utils/response.py and wired health route/service modules."
+      },
+      "error_messages": {
+        "test_api_health_returns_200_with_standard_success_response": "Health endpoint must return 200 with the standard success JSON envelope (success, message, data.status ok).",
+        "test_task_one_layered_structure_present": "Layered monolith folders and health wiring files from Task 1 must exist under exskilence_project."
+      }
+    },
+    "dynamic": {
+      "required": true,
+      "requiresFlask": true,
+      "flaskConfig": {
+        "appPath": "app.py",
+        "port": 5000,
+        "startupTimeout": 15000
+      },
+      "baseUrl": "http://localhost:5000",
+      "tests": [
+        {
+          "isMandatory": true,
+          "name": "Health API visible in browser",
+          "description": "Loads /api/health and confirms the page URL and document body render (JSON health check for Task 1).",
+          "path": "/api/health",
+          "captureScreenshot": true,
+          "actions": [],
+          "assertions": [
+            {
+              "type": "url",
+              "value": "/api/health",
+              "error_message": "Expected URL to end with /api/health"
+            },
+            {
+              "type": "visible",
+              "selector": "body",
+              "error_message": "Response body should be visible"
+            },
+            {
+              "type": "exists",
+              "selector": "body",
+              "error_message": "Document body must exist"
+            }
+          ]
+        },
+        {
+          "isMandatory": true,
+          "name": "Unknown API path returns error JSON body",
+          "description": "Navigates to a non-existent /api route and confirms the browser shows a body (standard JSON error envelope from global 404 handler).",
+          "path": "/api/__validation_missing_route__",
+          "captureScreenshot": true,
+          "actions": [
+            {
+              "type": "wait",
+              "duration": 500
+            }
+          ],
+          "assertions": [
+            {
+              "type": "url",
+              "value": "/api/__validation_missing_route__",
+              "error_message": "Expected to remain on the unknown API path"
+            },
+            {
+              "type": "visible",
+              "selector": "body",
+              "error_message": "Error JSON response body should be visible"
+            },
+            {
+              "type": "exists",
+              "selector": "body",
+              "error_message": "Document body must exist for 404 JSON"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
