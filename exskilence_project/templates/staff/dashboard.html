@@ -3,6 +3,18 @@
 {% block title %}Staff — MarketHub{% endblock %}
 
 {% block content %}
-  <h1 class="page-title">Staff dashboard</h1>
-  <p>Placeholder for seller tools (products, inventory, orders).</p>
+  <div class="staff-hub">
+    <h1 class="page-title">Staff dashboard</h1>
+    <p class="admin-welcome">View data assigned to your seller account (read-only).</p>
+    <nav class="staff-hub__nav">
+      <a class="staff-hub__card" href="{{ url_for('staff.store_readonly') }}">
+        <strong>My stores</strong>
+        <span>Stores you operate</span>
+      </a>
+      <a class="staff-hub__card" href="{{ url_for('staff.category_readonly') }}">
+        <strong>My categories</strong>
+        <span>Categories linked to your stores</span>
+      </a>
+    </nav>
+  </div>
 {% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}My stores — Staff{% endblock %}
+
+{% block content %}
+  <div class="staff-hub">
+    <p class="admin-welcome"><a href="{{ url_for('staff.dashboard') }}">← Staff home</a></p>
+    <h1 class="page-title">Your stores</h1>
+    <p class="admin-welcome">Read-only. Admins create stores and assign you as seller.</p>
+    <div class="data-card">
+      {% if stores %}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Store</th>
+              <th>Categories</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in stores %}
+              <tr>
+                <td><strong>{{ s.name }}</strong></td>
+                <td>{{ s.categories | map(attribute='name') | join(', ') if s.categories else '—' }}</td>
+                <td>{% if s.is_active %}<span class="badge badge--ok">Active</span>{% else %}<span class="badge badge--off">Inactive</span>{% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="admin-welcome">You have no stores assigned yet.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

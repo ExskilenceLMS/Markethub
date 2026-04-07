@@ -1,0 +1,59 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Stores — Admin{% endblock %}
+
+{% block admin_content %}
+  <header class="admin-page-header admin-page-header--row">
+    <div>
+      <h1 class="page-title">Stores</h1>
+      <p class="admin-welcome">Link sellers to stores and assign categories.</p>
+    </div>
+    <a class="btn-primary-fk btn-inline" href="{{ url_for('admin.store_new') }}">Add store</a>
+  </header>
+
+  <div class="data-card">
+    {% if stores %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Store</th>
+            <th>Seller</th>
+            <th>Categories</th>
+            <th>Status</th>
+            <th class="data-table__actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in stores %}
+            <tr>
+              <td><strong>{{ s.name }}</strong></td>
+              <td>{{ s.seller_name }}<br><span class="data-table__muted">{{ s.seller_email }}</span></td>
+              <td>
+                {% if s.categories %}
+                  {{ s.categories | map(attribute='name') | join(', ') }}
+                {% else %}
+                  <span class="data-table__muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if s.is_active %}
+                  <span class="badge badge--ok">Active</span>
+                {% else %}
+                  <span class="badge badge--off">Inactive</span>
+                {% endif %}
+              </td>
+              <td class="data-table__actions">
+                <a href="{{ url_for('admin.store_edit', sid=s.id) }}">Edit</a>
+                <form method="post" action="{{ url_for('admin.store_delete', sid=s.id) }}" class="inline-form" onsubmit="return confirm('Delete this store?');">
+                  <button type="submit" class="link-button danger">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="admin-welcome">No stores yet. Create a store and assign a seller.</p>
+    {% endif %}
+  </div>
+{% endblock %}

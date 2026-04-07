@@ -28,7 +28,7 @@ Centralized metrics reduce time-to-diagnose issues (growth, role distribution) a
 | `/admin/` | `admin/dashboard.html` |
 | `/admin/users` | `admin/users.html` (placeholder) |
 | `/admin/sellers` | `admin/sellers.html` (placeholder) |
-| `/admin/categories` | `admin/categories.html` (placeholder) |
+| `/admin/categories` | Category management (see Task 7) |
 
 Login redirect for admins points to **`admin.dashboard`** (`routes/web_routes.py`).
 

@@ -1,0 +1,43 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Categories — Admin{% endblock %}
+
+{% block admin_content %}
+  <header class="admin-page-header admin-page-header--row">
+    <div>
+      <h1 class="page-title">Categories</h1>
+      <p class="admin-welcome">Create and maintain product categories.</p>
+    </div>
+    <a class="btn-primary-fk btn-inline" href="{{ url_for('admin.category_new') }}">Add category</a>
+  </header>
+
+  <div class="data-card">
+    {% if categories %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th class="data-table__actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in categories %}
+            <tr>
+              <td><strong>{{ c.name }}</strong></td>
+              <td class="data-table__muted">{{ c.description or '—' }}</td>
+              <td class="data-table__actions">
+                <a href="{{ url_for('admin.category_edit', cid=c.id) }}">Edit</a>
+                <form method="post" action="{{ url_for('admin.category_delete', cid=c.id) }}" class="inline-form" onsubmit="return confirm('Delete this category?');">
+                  <button type="submit" class="link-button danger">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="admin-welcome">No categories yet. Add one to get started.</p>
+    {% endif %}
+  </div>
+{% endblock %}

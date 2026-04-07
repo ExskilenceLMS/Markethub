@@ -8,7 +8,7 @@
           <li><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
         {% endif %}
         {% if session.get('role') == 'seller' %}
-          <li><a href="{{ url_for('web.staff_dashboard') }}">Staff</a></li>
+          <li><a href="{{ url_for('staff.dashboard') }}">Staff</a></li>
         {% endif %}
         {% if session.get('role') == 'customer' %}
           <li><a href="{{ url_for('web.customer_home') }}">Shop</a></li>

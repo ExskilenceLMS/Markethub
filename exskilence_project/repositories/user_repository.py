@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import func, select
 
@@ -44,3 +44,7 @@ class UserRepository:
             select(func.count(User.id)).where(User.role == role),
         )
         return int(n or 0)
+
+    def list_users_by_role(self, role: str) -> List[User]:
+        stmt = select(User).where(User.role == role).order_by(User.name)
+        return list(db.session.scalars(stmt).all())

@@ -1,8 +1,11 @@
-from flask import Blueprint, flash, redirect, render_template, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
-from exceptions import AuthorizationException
+from exceptions import AuthorizationException, NotFoundException, ValidationException
 from services.admin_service import AdminService
+from services.category_service import CategoryService
+from services.store_service import StoreService
 from services.user_service import UserService
+from utils.form_errors import validation_exception_to_field_errors
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -33,6 +36,164 @@ def sellers():
     return render_template("admin/sellers.html")
 
 
+# —— Categories ——
+
+
 @admin_bp.get("/categories")
-def categories():
-    return render_template("admin/categories.html")
+def category_list():
+    categories = CategoryService().list_all_dicts()
+    return render_template("admin/category_list.html", categories=categories)
+
+
+@admin_bp.route("/categories/new", methods=["GET", "POST"])
+def category_new():
+    if request.method == "POST":
+        try:
+            CategoryService().create(request.form.to_dict())
+            flash("Category created.", "success")
+            return redirect(url_for("admin.category_list"))
+        except ValidationException as exc:
+            return render_template(
+                "admin/category_form.html",
+                category=None,
+                form_errors=validation_exception_to_field_errors(exc),
+            )
+    return render_template("admin/category_form.html", category=None, form_errors=None)
+
+
+@admin_bp.route("/categories/<int:cid>/edit", methods=["GET", "POST"])
+def category_edit(cid):
+    if request.method == "POST":
+        try:
+            CategoryService().update(cid, request.form.to_dict())
+            flash("Category updated.", "success")
+            return redirect(url_for("admin.category_list"))
+        except ValidationException as exc:
+            try:
+                category = CategoryService().get_dict(cid)
+            except NotFoundException:
+                flash("Category not found.", "danger")
+                return redirect(url_for("admin.category_list"))
+            return render_template(
+                "admin/category_form.html",
+                category=category,
+                form_errors=validation_exception_to_field_errors(exc),
+            )
+    try:
+        category = CategoryService().get_dict(cid)
+    except NotFoundException:
+        flash("Category not found.", "danger")
+        return redirect(url_for("admin.category_list"))
+    return render_template("admin/category_form.html", category=category, form_errors=None)
+
+
+@admin_bp.post("/categories/<int:cid>/delete")
+def category_delete(cid):
+    try:
+        CategoryService().delete(cid)
+        flash("Category deleted.", "success")
+    except NotFoundException:
+        flash("Category not found.", "danger")
+    return redirect(url_for("admin.category_list"))
+
+
+# —— Stores ——
+
+
+@admin_bp.get("/stores")
+def store_list():
+    stores = StoreService().list_all_dicts()
+    return render_template("admin/store_list.html", stores=stores)
+
+
+@admin_bp.route("/stores/new", methods=["GET", "POST"])
+def store_new():
+    sellers = StoreService().list_sellers_for_dropdown()
+    categories = CategoryService().list_all_dicts()
+    if request.method == "POST":
+        form = {
+            "name": request.form.get("name"),
+            "seller_id": request.form.get("seller_id"),
+            "is_active": request.form.get("is_active"),
+            "category_ids": request.form.getlist("category_ids"),
+        }
+        try:
+            StoreService().create(form)
+            flash("Store created.", "success")
+            return redirect(url_for("admin.store_list"))
+        except ValidationException as exc:
+            return render_template(
+                "admin/store_form.html",
+                store=None,
+                sellers=sellers,
+                categories=categories,
+                form_errors=validation_exception_to_field_errors(exc),
+            )
+    return render_template(
+        "admin/store_form.html",
+        store=None,
+        sellers=sellers,
+        categories=categories,
+        form_errors=None,
+    )
+
+
+@admin_bp.route("/stores/<int:sid>/edit", methods=["GET", "POST"])
+def store_edit(sid):
+    sellers = StoreService().list_sellers_for_dropdown()
+    categories = CategoryService().list_all_dicts()
+    if request.method == "POST":
+        form = {
+            "name": request.form.get("name"),
+            "seller_id": request.form.get("seller_id"),
+            "is_active": request.form.get("is_active"),
+            "category_ids": request.form.getlist("category_ids"),
+        }
+        try:
+            StoreService().update(sid, form)
+            flash("Store updated.", "success")
+            return redirect(url_for("admin.store_list"))
+        except ValidationException as exc:
+            try:
+                store = StoreService().get_dict(sid)
+            except NotFoundException:
+                flash("Store not found.", "danger")
+                return redirect(url_for("admin.store_list"))
+            return render_template(
+                "admin/store_form.html",
+                store=store,
+                sellers=sellers,
+                categories=categories,
+                form_errors=validation_exception_to_field_errors(exc),
+            )
+    try:
+        store = StoreService().get_dict(sid)
+    except NotFoundException:
+        flash("Store not found.", "danger")
+        return redirect(url_for("admin.store_list"))
+    return render_template(
+        "admin/store_form.html",
+        store=store,
+        sellers=sellers,
+        categories=categories,
+        form_errors=None,
+    )
+
+
+@admin_bp.post("/stores/<int:sid>/delete")
+def store_delete(sid):
+    try:
+        StoreService().delete(sid)
+        flash("Store deleted.", "success")
+    except NotFoundException:
+        flash("Store not found.", "danger")
+    return redirect(url_for("admin.store_list"))
+
+
+# —— Staff / assignments overview ——
+
+
+@admin_bp.get("/staff/manage")
+def staff_management():
+    assignments = StoreService().staff_assignments_overview()
+    return render_template("admin/staff_management.html", assignments=assignments)

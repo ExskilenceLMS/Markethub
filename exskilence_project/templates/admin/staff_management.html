@@ -1,0 +1,46 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Staff management — Admin{% endblock %}
+
+{% block admin_content %}
+  <header class="admin-page-header">
+    <h1 class="page-title">Staff management</h1>
+    <p class="admin-welcome">Sellers and their assigned stores and categories (read-only overview). Use <a href="{{ url_for('admin.store_list') }}">Stores</a> to assign or edit.</p>
+  </header>
+
+  <div class="data-card">
+    {% if assignments %}
+      {% for row in assignments %}
+        <section class="staff-block">
+          <h2 class="staff-block__title">{{ row.seller_name }} <span class="data-table__muted">{{ row.seller_email }}</span></h2>
+          {% if row.stores %}
+            <table class="data-table data-table--compact">
+              <thead>
+                <tr>
+                  <th>Store</th>
+                  <th>Status</th>
+                  <th>Categories</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in row.stores %}
+                  <tr>
+                    <td><strong>{{ s.name }}</strong></td>
+                    <td>{% if s.is_active %}<span class="badge badge--ok">Active</span>{% else %}<span class="badge badge--off">Inactive</span>{% endif %}</td>
+                    <td>{{ s.categories | map(attribute='name') | join(', ') if s.categories else '—' }}</td>
+                    <td><a href="{{ url_for('admin.store_edit', sid=s.id) }}">Edit store</a></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="admin-welcome">No stores assigned. <a href="{{ url_for('admin.store_new') }}">Create a store</a> for this seller.</p>
+          {% endif %}
+        </section>
+      {% endfor %}
+    {% else %}
+      <p class="admin-welcome">No sellers in the system yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}

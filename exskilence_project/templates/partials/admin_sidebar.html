@@ -6,7 +6,11 @@
        class="admin-sidebar__link {% if request.endpoint == 'admin.users' %}is-active{% endif %}">Users</a>
     <a href="{{ url_for('admin.sellers') }}"
        class="admin-sidebar__link {% if request.endpoint == 'admin.sellers' %}is-active{% endif %}">Sellers</a>
-    <a href="{{ url_for('admin.categories') }}"
-       class="admin-sidebar__link {% if request.endpoint == 'admin.categories' %}is-active{% endif %}">Categories</a>
+    <a href="{{ url_for('admin.category_list') }}"
+       class="admin-sidebar__link {% if request.endpoint in ('admin.category_list', 'admin.category_new', 'admin.category_edit') %}is-active{% endif %}">Categories</a>
+    <a href="{{ url_for('admin.store_list') }}"
+       class="admin-sidebar__link {% if request.endpoint in ('admin.store_list', 'admin.store_new', 'admin.store_edit') %}is-active{% endif %}">Stores</a>
+    <a href="{{ url_for('admin.staff_management') }}"
+       class="admin-sidebar__link {% if request.endpoint == 'admin.staff_management' %}is-active{% endif %}">Staff management</a>
   </nav>
 </aside>

@@ -15,7 +15,7 @@ def _redirect_after_login(user: Dict[str, Any]):
     if role == "admin":
         return redirect(url_for("admin.dashboard"))
     if role == "seller":
-        return redirect(url_for("web.staff_dashboard"))
+        return redirect(url_for("staff.dashboard"))
     if role == "customer":
         return redirect(url_for("web.customer_home"))
     return redirect(url_for("web.home"))
@@ -74,16 +74,6 @@ def logout():
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for("web.home"))
-
-
-@web_bp.route("/staff")
-def staff_dashboard():
-    try:
-        UserService.require_roles(session, ["seller"])
-    except AuthorizationException:
-        flash("Staff access only.", "warning")
-        return redirect(url_for("web.login"))
-    return render_template("staff/dashboard.html")
 
 
 @web_bp.route("/customer")

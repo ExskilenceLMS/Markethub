@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}My categories — Staff{% endblock %}
+
+{% block content %}
+  <div class="staff-hub">
+    <p class="admin-welcome"><a href="{{ url_for('staff.dashboard') }}">← Staff home</a></p>
+    <h1 class="page-title">Categories on your stores</h1>
+    <p class="admin-welcome">Read-only. Contact an admin to change assignments.</p>
+    <div class="data-card">
+      {% if categories %}
+        <table class="data-table">
+          <thead>
+            <tr><th>Name</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            {% for c in categories %}
+              <tr>
+                <td><strong>{{ c.name }}</strong></td>
+                <td class="data-table__muted">{{ c.description or '—' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="admin-welcome">No categories linked to your stores yet.</p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

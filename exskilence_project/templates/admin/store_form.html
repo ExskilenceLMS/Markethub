@@ -1,0 +1,69 @@
+{% extends "admin/base_admin.html" %}
+{% from 'partials/form_errors.html' import form_error_summary, field_errors %}
+
+{% block title %}{% if store %}Edit{% else %}Add{% endif %} store — Admin{% endblock %}
+
+{% block admin_content %}
+  <header class="admin-page-header">
+    <h1 class="page-title">{% if store %}Edit store{% else %}Add store{% endif %}</h1>
+    <p class="admin-welcome"><a href="{{ url_for('admin.store_list') }}">← Back to list</a></p>
+  </header>
+
+  <div class="form-card">
+    {{ form_error_summary(form_errors or {}) }}
+    <form method="post" action="" novalidate>
+      <div class="form-group">
+        <label for="name">Store name</label>
+        <input id="name" name="name" type="text" required
+               value="{{ request.form.get('name', store.name if store else '') }}"
+               class="{% if form_errors and form_errors.get('name') %}user-error{% endif %}">
+        {{ field_errors(form_errors or {}, 'name') }}
+      </div>
+      <div class="form-group">
+        <label for="seller_id">Seller (staff)</label>
+        <select id="seller_id" name="seller_id"
+                class="{% if form_errors and form_errors.get('seller_id') %}user-error{% endif %}">
+          <option value="">— Select seller —</option>
+          {% set sid = request.form.get('seller_id', store.seller_id|string if store else '') %}
+          {% for u in sellers %}
+            <option value="{{ u.id }}" {% if sid|string == u.id|string %}selected{% endif %}>{{ u.name }} ({{ u.email }})</option>
+          {% endfor %}
+        </select>
+        {{ field_errors(form_errors or {}, 'seller_id') }}
+      </div>
+      <div class="form-group">
+        <span class="form-label-block">Categories</span>
+        <fieldset class="checkbox-grid">
+          {% if request.method == 'POST' %}
+            {% set sel_ids = request.form.getlist('category_ids') %}
+          {% else %}
+            {% set sel_ids = store.category_ids | map('string') | list if store and store.category_ids else [] %}
+          {% endif %}
+          {% for c in categories %}
+            <label class="checkbox-label">
+              <input type="checkbox" name="category_ids" value="{{ c.id }}"
+                     {% if c.id|string in sel_ids %}checked{% endif %}>
+              {{ c.name }}
+            </label>
+          {% endfor %}
+        </fieldset>
+        {% if not categories %}
+          <p class="admin-welcome">No categories defined. <a href="{{ url_for('admin.category_new') }}">Add a category</a> first.</p>
+        {% endif %}
+        {{ field_errors(form_errors or {}, 'category_ids') }}
+      </div>
+      <div class="form-group form-group--toggle">
+        <label class="toggle-label">
+          <input type="checkbox" name="is_active" value="1"
+                 {% if request.method == 'POST' %}
+                   {% if request.form.get('is_active') %}checked{% endif %}
+                 {% elif store is none or store.is_active %}
+                   checked
+                 {% endif %}>
+          <span>Store is active</span>
+        </label>
+      </div>
+      <button type="submit" class="btn-primary-fk btn-inline">Save</button>
+    </form>
+  </div>
+{% endblock %}
