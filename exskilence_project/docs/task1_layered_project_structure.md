@@ -41,7 +41,7 @@ Routes → Services → Repositories → Models → Database
 - `config/settings.py`: development, production, and testing config classes; SQLAlchemy URI is built from `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, and optional `DB_DRIVER` via `resolve_sqlalchemy_database_uri()` (see `.env.example`).
 - SQLAlchemy via Flask-SQLAlchemy: `models/db.py`, wired in `app.py`.
 - `app.py`: `create_app()` loads config, sets `SQLALCHEMY_DATABASE_URI` from env-based MySQL settings (production requires `DB_HOST`, `DB_USER`, `DB_NAME`), initializes `db`, registers middleware and blueprints.
-- `utils/response.py`: `success_response` and `error_response` for consistent JSON.
+- `utils/response.py`: `success_response` and `error_response` for consistent JSON (see Task 2 doc for the current envelope).
 - Example slice: `GET /api/health` uses a service only (no logic in the route beyond calling the service and formatting the response).
 
 Run from `exskilence_project/` (with a virtualenv and `pip install -r requirements.txt`):

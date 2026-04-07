@@ -1,35 +1,32 @@
-from typing import Any, Optional
+from typing import Any, List, Optional, Tuple
 
 from flask import jsonify, Response
 
 
 def success_response(
     data: Any = None,
-    message: str = "OK",
+    message: Optional[str] = None,
     status_code: int = 200,
-    meta: Optional[dict] = None,
-) -> tuple[Response, int]:
+) -> Tuple[Response, int]:
     body: dict[str, Any] = {
         "success": True,
-        "message": message,
-        "data": data,
+        "data": data if data is not None else {},
     }
-    if meta is not None:
-        body["meta"] = meta
+    if message is not None:
+        body["message"] = message
     return jsonify(body), status_code
 
 
 def error_response(
     message: str,
     status_code: int = 400,
-    errors: Optional[list] = None,
-    code: Optional[str] = None,
-) -> tuple[Response, int]:
+    details: Optional[List[Any]] = None,
+) -> Tuple[Response, int]:
     body: dict[str, Any] = {
         "success": False,
-        "message": message,
-        "errors": errors if errors is not None else [],
+        "error": {
+            "message": message,
+            "details": details if details is not None else [],
+        },
     }
-    if code:
-        body["code"] = code
     return jsonify(body), status_code

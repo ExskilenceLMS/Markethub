@@ -1,3 +1,4 @@
+from config.logging_config import get_logger, setup_logging
 from config.settings import (
     BaseConfig,
     DevelopmentConfig,
@@ -13,5 +14,7 @@ __all__ = [
     "ProductionConfig",
     "TestingConfig",
     "get_config",
+    "get_logger",
     "resolve_sqlalchemy_database_uri",
+    "setup_logging",
 ]
