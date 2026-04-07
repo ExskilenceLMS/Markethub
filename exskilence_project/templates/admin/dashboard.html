@@ -1,8 +1,23 @@
-{% extends "base.html" %}
+{% extends "admin/base_admin.html" %}
+{% from 'partials/stat_card.html' import stat_card %}
 
-{% block title %}Admin — MarketHub{% endblock %}
+{% block title %}Admin dashboard — MarketHub{% endblock %}
 
-{% block content %}
-  <h1 class="page-title">Admin dashboard</h1>
-  <p>Placeholder for platform administration (users, categories, sellers).</p>
+{% block admin_content %}
+  <header class="admin-page-header">
+    <h1 class="page-title">Admin dashboard</h1>
+    <p class="admin-welcome">
+      Welcome back{% if session.get('name') %}, <strong>{{ session.get('name') }}</strong>{% endif %}.
+      Here is a snapshot of your platform.
+    </p>
+  </header>
+
+  <section class="stat-grid" aria-label="Platform statistics">
+    {{ stat_card("Total users", stats.total_users) }}
+    {{ stat_card("Admins", stats.total_admins) }}
+    {{ stat_card("Sellers", stats.total_sellers) }}
+    {{ stat_card("Customers", stats.total_customers) }}
+    {{ stat_card("Products", stats.total_products, "Coming when catalog module ships") }}
+    {{ stat_card("Orders", stats.total_orders, "Coming when order module ships") }}
+  </section>
 {% endblock %}

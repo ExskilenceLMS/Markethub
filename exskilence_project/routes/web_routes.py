@@ -13,7 +13,7 @@ web_bp = Blueprint("web", __name__)
 def _redirect_after_login(user: Dict[str, Any]):
     role = user.get("role")
     if role == "admin":
-        return redirect(url_for("web.admin_dashboard"))
+        return redirect(url_for("admin.dashboard"))
     if role == "seller":
         return redirect(url_for("web.staff_dashboard"))
     if role == "customer":
@@ -74,16 +74,6 @@ def logout():
     session.clear()
     flash("You have been logged out.", "success")
     return redirect(url_for("web.home"))
-
-
-@web_bp.route("/admin")
-def admin_dashboard():
-    try:
-        UserService.require_roles(session, ["admin"])
-    except AuthorizationException:
-        flash("Admin access only. Please log in with an admin account.", "warning")
-        return redirect(url_for("web.login"))
-    return render_template("admin/dashboard.html")
 
 
 @web_bp.route("/staff")

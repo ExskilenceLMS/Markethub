@@ -5,7 +5,7 @@
       {% if session.get('user_id') %}
         <li class="nav-muted">{{ session.get('name') or session.get('email') }}</li>
         {% if session.get('role') == 'admin' %}
-          <li><a href="{{ url_for('web.admin_dashboard') }}">Admin</a></li>
+          <li><a href="{{ url_for('admin.dashboard') }}">Admin</a></li>
         {% endif %}
         {% if session.get('role') == 'seller' %}
           <li><a href="{{ url_for('web.staff_dashboard') }}">Staff</a></li>

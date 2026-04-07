@@ -1,0 +1,12 @@
+<aside class="admin-sidebar" aria-label="Admin navigation">
+  <nav class="admin-sidebar__nav">
+    <a href="{{ url_for('admin.dashboard') }}"
+       class="admin-sidebar__link {% if request.endpoint == 'admin.dashboard' %}is-active{% endif %}">Dashboard</a>
+    <a href="{{ url_for('admin.users') }}"
+       class="admin-sidebar__link {% if request.endpoint == 'admin.users' %}is-active{% endif %}">Users</a>
+    <a href="{{ url_for('admin.sellers') }}"
+       class="admin-sidebar__link {% if request.endpoint == 'admin.sellers' %}is-active{% endif %}">Sellers</a>
+    <a href="{{ url_for('admin.categories') }}"
+       class="admin-sidebar__link {% if request.endpoint == 'admin.categories' %}is-active{% endif %}">Categories</a>
+  </nav>
+</aside>
