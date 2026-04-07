@@ -23,11 +23,12 @@ def validate_password_present(password: Optional[str]) -> None:
 
 def validate_register_payload(data: Optional[Dict[str, Any]]) -> Tuple[str, str, str, str]:
     if not data or not isinstance(data, dict):
-        raise ValidationException("JSON body is required")
+        raise ValidationException("Request data is required")
 
     name = data.get("name")
     email = data.get("email")
     password = data.get("password")
+    confirm_password = data.get("confirm_password")
     role_raw = data.get("role", "customer")
 
     if name is None or not isinstance(name, str) or not name.strip():
@@ -35,6 +36,13 @@ def validate_register_payload(data: Optional[Dict[str, Any]]) -> Tuple[str, str,
 
     validate_email_format(email)
     validate_password_present(password)
+
+    if confirm_password is not None:
+        if not isinstance(confirm_password, str) or password != confirm_password:
+            raise ValidationException(
+                "Passwords do not match",
+                details=["confirm_password"],
+            )
 
     if role_raw is None or not isinstance(role_raw, str) or not role_raw.strip():
         raise ValidationException("Role is required", details=["role"])
@@ -51,7 +59,7 @@ def validate_register_payload(data: Optional[Dict[str, Any]]) -> Tuple[str, str,
 
 def validate_login_payload(data: Optional[Dict[str, Any]]) -> Tuple[str, str]:
     if not data or not isinstance(data, dict):
-        raise ValidationException("JSON body is required")
+        raise ValidationException("Request data is required")
 
     email = data.get("email")
     password = data.get("password")

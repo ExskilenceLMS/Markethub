@@ -4,14 +4,16 @@
 {% block title %}Register — MarketHub{% endblock %}
 
 {% block content %}
-  <div class="card">
+<div class="auth-page">
+  <div class="auth-card">
     <h1>Create account</h1>
-    <p style="color:var(--muted);font-size:0.9rem;margin-top:-0.5rem">Self-registration is for customers only.</p>
+    <p class="auth-sub">
+      Only the <strong>Customer</strong> role can self-register. Admin and Seller accounts are created by an administrator.
+    </p>
     {{ form_error_summary(form_errors or {}) }}
     <form method="post" action="{{ url_for('web.register') }}" novalidate>
-      <input type="hidden" name="role" value="customer">
       <div class="form-group">
-        <label for="name">Name</label>
+        <label for="name">Full name</label>
         <input id="name" name="name" type="text" autocomplete="name"
                value="{{ request.form.get('name', '') }}"
                class="{% if form_errors and form_errors.get('name') %}user-error{% endif %}">
@@ -30,10 +32,28 @@
                class="{% if form_errors and form_errors.get('password') %}user-error{% endif %}">
         {{ field_errors(form_errors or {}, 'password') }}
       </div>
-      <button type="submit" class="btn">Register</button>
+      <div class="form-group">
+        <label for="confirm_password">Confirm password</label>
+        <input id="confirm_password" name="confirm_password" type="password" autocomplete="new-password"
+               class="{% if form_errors and form_errors.get('confirm_password') %}user-error{% endif %}">
+        {{ field_errors(form_errors or {}, 'confirm_password') }}
+      </div>
+      <div class="form-group">
+        <label for="role">Role</label>
+        <select id="role" name="role"
+                class="{% if form_errors and form_errors.get('role') %}user-error{% endif %}">
+          {% set r = request.form.get('role', 'customer') %}
+          <option value="customer" {% if r == 'customer' %}selected{% endif %}>Customer</option>
+          <option value="seller" {% if r == 'seller' %}selected{% endif %}>Seller</option>
+          <option value="admin" {% if r == 'admin' %}selected{% endif %}>Admin</option>
+        </select>
+        {{ field_errors(form_errors or {}, 'role') }}
+      </div>
+      <button type="submit" class="btn-primary-fk">Register</button>
     </form>
-    <p style="margin-top:1rem;font-size:0.9rem;color:var(--muted)">
+    <p class="auth-footer-link">
       Already have an account? <a href="{{ url_for('web.login') }}">Log in</a>
     </p>
   </div>
+</div>
 {% endblock %}

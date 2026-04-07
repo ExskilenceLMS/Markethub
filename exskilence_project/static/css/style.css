@@ -1,0 +1,197 @@
+/* Flipkart-inspired theme (#2874F0) — loads after base.css */
+
+:root {
+  --fk-blue: #2874f0;
+  --fk-blue-dark: #1a5fc4;
+  --fk-bg: #f1f3f6;
+  --fk-text: #212121;
+  --fk-muted: #878787;
+  --fk-border: #e0e0e0;
+  --accent: var(--fk-blue);
+}
+
+body {
+  background: var(--fk-bg);
+  color: var(--fk-text);
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.site-header {
+  background: var(--fk-blue);
+  border-bottom: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.nav-inner {
+  max-width: 1120px;
+}
+
+.brand {
+  color: #fff;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.brand:hover {
+  color: #fff;
+  opacity: 0.92;
+}
+
+.site-header .nav-links a {
+  color: #fff;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.site-header .nav-links a:hover {
+  color: #fff;
+  text-decoration: underline;
+  opacity: 0.95;
+}
+
+.site-header .nav-muted {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+}
+
+main {
+  max-width: 1120px;
+}
+
+.auth-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2.5rem 1rem 3rem;
+  min-height: calc(100vh - 140px);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--fk-border);
+  padding: 2rem 2rem 1.75rem;
+}
+
+.auth-card h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--fk-text);
+}
+
+.auth-sub {
+  color: var(--fk-muted);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  margin: 0 0 1.25rem;
+}
+
+.auth-card .form-group {
+  margin-bottom: 1.1rem;
+}
+
+.auth-card .form-group label {
+  color: var(--fk-text);
+  font-weight: 500;
+  font-size: 0.8125rem;
+}
+
+.auth-card .form-group input,
+.auth-card .form-group select {
+  border-radius: 2px;
+  border: 1px solid var(--fk-border);
+  padding: 0.6rem 0.75rem;
+  transition: border-color 0.15s ease;
+}
+
+.auth-card .form-group input:focus,
+.auth-card .form-group select:focus {
+  outline: none;
+  border-color: var(--fk-blue);
+  box-shadow: 0 0 0 2px rgba(40, 116, 240, 0.15);
+}
+
+.auth-card .form-group select {
+  width: 100%;
+  font: inherit;
+  background: #fff;
+  cursor: pointer;
+}
+
+.btn-primary-fk {
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.65rem 1rem;
+  border: none;
+  border-radius: 2px;
+  background: var(--fk-blue);
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary-fk:hover {
+  background: var(--fk-blue-dark);
+  filter: none;
+}
+
+.auth-footer-link {
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--fk-muted);
+  text-align: center;
+}
+
+.auth-footer-link a {
+  color: var(--fk-blue);
+  font-weight: 600;
+}
+
+.auth-footer-link a:hover {
+  text-decoration: underline;
+}
+
+.site-footer {
+  background: #fff;
+  border-top: 1px solid var(--fk-border);
+  color: var(--fk-muted);
+}
+
+.flash-stack {
+  max-width: 1120px;
+}
+
+.form-errors {
+  border-radius: 2px;
+  font-size: 0.875rem;
+}
+
+.field-error {
+  font-size: 0.8125rem;
+}
+
+.page-title {
+  color: var(--fk-text);
+}
+
+.card {
+  border-radius: 2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--fk-border);
+}
+
+.btn {
+  background: var(--fk-blue);
+  border-radius: 2px;
+}
+
+.btn:hover {
+  background: var(--fk-blue-dark);
+  filter: none;
+}

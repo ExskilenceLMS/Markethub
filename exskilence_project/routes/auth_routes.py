@@ -4,6 +4,7 @@ from services.user_service import UserService
 from utils.response import success_response
 from utils.session_util import set_user_session
 
+# JSON API only. Browser forms use routes/web_routes.py (Jinja templates).
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
 

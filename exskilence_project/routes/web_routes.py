@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 
 from exceptions import AuthorizationException, ValidationException
@@ -6,6 +8,17 @@ from utils.form_errors import validation_exception_to_field_errors
 from utils.session_util import set_user_session
 
 web_bp = Blueprint("web", __name__)
+
+
+def _redirect_after_login(user: Dict[str, Any]):
+    role = user.get("role")
+    if role == "admin":
+        return redirect(url_for("web.admin_dashboard"))
+    if role == "seller":
+        return redirect(url_for("web.staff_dashboard"))
+    if role == "customer":
+        return redirect(url_for("web.customer_home"))
+    return redirect(url_for("web.home"))
 
 
 @web_bp.route("/")
@@ -24,7 +37,7 @@ def login():
             user = UserService().login(data)
             set_user_session(session, user)
             flash("Logged in successfully.", "success")
-            return redirect(url_for("web.home"))
+            return _redirect_after_login(user)
         except ValidationException as exc:
             return render_template(
                 "auth/login.html",
@@ -40,13 +53,14 @@ def register():
             "name": request.form.get("name"),
             "email": request.form.get("email"),
             "password": request.form.get("password"),
+            "confirm_password": request.form.get("confirm_password"),
             "role": request.form.get("role") or "customer",
         }
         try:
             user = UserService().register(data)
             set_user_session(session, user)
-            flash("Account created. You are logged in.", "success")
-            return redirect(url_for("web.home"))
+            flash("Registration successful. You are logged in.", "success")
+            return _redirect_after_login(user)
         except ValidationException as exc:
             return render_template(
                 "auth/register.html",
