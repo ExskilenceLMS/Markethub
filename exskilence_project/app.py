@@ -22,7 +22,8 @@ def create_app() -> Flask:
     register_middleware(app)
     register_blueprints(app)
 
-    get_logger().info("Application initialized (env=%s)", app.env)
+    flask_env = getattr(app, "env", None) or os.environ.get("FLASK_ENV", "development")
+    get_logger().info("Application initialized (env=%s)", flask_env)
 
     return app
 
