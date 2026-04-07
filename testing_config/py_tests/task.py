@@ -1,6 +1,5 @@
 import os
 import sys
-from pathlib import Path
 from urllib.parse import urlparse
 
 import pytest
@@ -30,81 +29,123 @@ def client():
             db.drop_all()
 
 
-def test_home_page_includes_header_main_footer_layout(client):
-    """GET / returns 200 and HTML that includes base layout regions (navbar, main, footer)."""
-    try:
-        response = client.get("/")
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "site-header" in html
-        assert "<main>" in html
-        assert "site-footer" in html
-        assert "base.css" in html
-    except Exception as error:
-        pytest.fail(f"Home base layout check failed: {error}")
-
-
-def test_login_page_has_post_form_email_password(client):
-    """GET /login returns 200 with POST form fields email/password and layout chrome."""
+def test_login_page_renders_auth_form_and_register_link(client):
+    """GET /login returns the auth card with email/password POST form and link to register."""
     try:
         response = client.get("/login")
         assert response.status_code == 200
         html = response.get_data(as_text=True)
+        assert "auth-page" in html
+        assert "auth-card" in html
         assert 'method="post"' in html.lower()
         assert 'name="email"' in html
         assert 'name="password"' in html
-        assert 'type="submit"' in html
-        assert "site-header" in html
-        assert "Register" in html
+        assert "btn-primary-fk" in html
+        assert "register" in html.lower()
     except Exception as error:
-        pytest.fail(f"Login page structure check failed: {error}")
+        pytest.fail(f"Login page UI check failed: {error}")
 
 
-def test_register_page_inherits_layout_and_flash_slot(client):
-    """GET /register returns 200 with card form; base template wires flash_messages (see templates/base.html)."""
+def test_register_page_renders_confirm_password_and_role_select(client):
+    """GET /register returns confirm password, role select, and auth chrome."""
     try:
         response = client.get("/register")
         assert response.status_code == 200
         html = response.get_data(as_text=True)
-        assert "Create account" in html
-        assert 'name="name"' in html
-        assert "site-header" in html
-        assert 'name="role"' in html and "customer" in html
-        assert "site-footer" in html
-        base_tpl = Path(exskilence_path) / "templates" / "base.html"
-        assert base_tpl.is_file()
-        assert "flash_messages.html" in base_tpl.read_text(encoding="utf-8")
+        assert "auth-page" in html and "auth-card" in html
+        assert 'name="confirm_password"' in html
+        assert 'name="role"' in html
+        assert 'name="name"' in html and 'name="email"' in html
+        assert "customer" in html
     except Exception as error:
-        pytest.fail(f"Register page layout check failed: {error}")
+        pytest.fail(f"Register page UI check failed: {error}")
 
 
-def test_web_login_success_redirects_to_home(client):
-    """After register, logout, and valid web form login, response redirects to home (/)."""
+def test_login_post_invalid_password_shows_error_message(client):
+    """Invalid web login re-renders login with standard error summary (no user enumeration)."""
     try:
-        client.post(
-            "/register",
-            data={
-                "name": "Task Four User",
-                "email": "task4user@example.com",
-                "password": "Task4Test!pass",
-                "role": "customer",
-            },
-            follow_redirects=True,
-        )
-        client.post("/logout", follow_redirects=True)
+        with app.app_context():
+            from repositories.user_repository import UserRepository
+            from utils.passwords import hash_password
+
+            UserRepository().create_user(
+                "U1",
+                "u1@example.com",
+                hash_password("realpass"),
+                "customer",
+            )
 
         response = client.post(
             "/login",
+            data={"email": "u1@example.com", "password": "wrongpass"},
+        )
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert "Invalid email or password" in html
+        assert "form-errors" in html
+    except Exception as error:
+        pytest.fail(f"Login error display check failed: {error}")
+
+
+def test_register_post_password_mismatch_shows_validation(client):
+    """Mismatched passwords re-render register with field-level error for confirm_password."""
+    try:
+        response = client.post(
+            "/register",
             data={
-                "email": "task4user@example.com",
-                "password": "Task4Test!pass",
+                "name": "Test User",
+                "email": "mismatch@example.com",
+                "password": "one-pass",
+                "confirm_password": "other-pass",
+                "role": "customer",
+            },
+        )
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert "Passwords do not match" in html
+        assert "err-confirm_password" in html or "confirm_password" in html
+    except Exception as error:
+        pytest.fail(f"Password mismatch UI check failed: {error}")
+
+
+def test_register_non_customer_role_shows_role_error(client):
+    """Choosing seller/admin on the register form must show self-register role validation."""
+    try:
+        response = client.post(
+            "/register",
+            data={
+                "name": "Seller Try",
+                "email": "sellertry@example.com",
+                "password": "samepass",
+                "confirm_password": "samepass",
+                "role": "seller",
+            },
+        )
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert "Self-registration is only allowed" in html
+        assert "form-errors" in html or "field-error" in html
+    except Exception as error:
+        pytest.fail(f"Non-customer register rejection UI check failed: {error}")
+
+
+def test_register_customer_web_post_redirects_to_customer_area(client):
+    """Successful customer registration redirects to the customer route (role-based landing)."""
+    try:
+        response = client.post(
+            "/register",
+            data={
+                "name": "New Customer",
+                "email": "newcust@example.com",
+                "password": "RegPass!9",
+                "confirm_password": "RegPass!9",
+                "role": "customer",
             },
             follow_redirects=False,
         )
         assert response.status_code == 302
         loc = response.headers.get("Location", "")
-        path = urlparse(loc).path or "/"
-        assert path == "/" or path == ""
-        assert "login" not in loc.lower()
+        path = urlparse(loc).path
+        assert path.rstrip("/") == "/customer"
     except Exception as error:
-        pytest.fail(f"Web login redirect to home check failed: {error}")
+        pytest.fail(f"Customer register redirect check failed: {error}")

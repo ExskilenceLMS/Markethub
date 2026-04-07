@@ -8,20 +8,22 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "templates/base.html",
-            "title": "Base layout document structure",
-            "description": "Base template must define the HTML shell, linked stylesheet, main landmark, and include slots for chrome.",
-            "points": 10,
-            "requiredElements": ["html", "head", "body", "main"],
-            "error_message": "{requiredElements} not found"
-          },
-          {
             "file": "templates/auth/login.html",
-            "title": "Login page form and card",
-            "description": "Login template extends base and exposes a POST form with email and password plus primary actions.",
+            "title": "Login page structure",
+            "description": "Login UI extends base, uses auth layout, POST form with email and password, primary submit, and cross-link to register.",
             "points": 10,
             "requiredElements": ["form", "input", "button", "label"],
-            "requiredIdentifiers": ["card", "btn"],
+            "requiredIdentifiers": ["auth-page", "auth-card", "btn-primary-fk"],
+            "error_message": "{requiredElements} not found",
+            "error_message_identifiers": "{requiredIdentifiers} not found"
+          },
+          {
+            "file": "templates/auth/register.html",
+            "title": "Register page structure",
+            "description": "Registration UI includes name, email, password, confirm password, role control, and link back to login.",
+            "points": 10,
+            "requiredElements": ["form", "input", "select", "label", "button"],
+            "requiredIdentifiers": ["auth-page", "auth-card", "confirm_password"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           }
@@ -31,11 +33,11 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "static/css/base.css",
-            "title": "Base layout and component styles",
-            "description": "Global layout styles for header, footer, main content, cards, and buttons.",
+            "file": "static/css/style.css",
+            "title": "Auth theme styles",
+            "description": "Flipkart-style auth page, card, primary button, and footer link styling for registration and login.",
             "points": 10,
-            "requiredSelectors": [".site-header", ".site-footer", "main", ".card", ".btn"],
+            "requiredSelectors": [".auth-page", ".auth-card", ".btn-primary-fk", ".auth-footer-link"],
             "error_message": "{requiredSelectors} not found"
           }
         ]
@@ -46,24 +48,30 @@
       "requiresFlask": false,
       "testFile": "testing_config/py_tests/task.py",
       "timeout": 45000,
-      "points": 40,
+      "points": 45,
       "runTests": {
-        "test_home_page_includes_header_main_footer_layout": "Home Uses Base Layout",
-        "test_login_page_has_post_form_email_password": "Login Page Form Structure",
-        "test_register_page_inherits_layout_and_flash_slot": "Register Page Layout",
-        "test_web_login_success_redirects_to_home": "Web Login Redirects Home"
+        "test_login_page_renders_auth_form_and_register_link": "Login Page UI",
+        "test_register_page_renders_confirm_password_and_role_select": "Register Page UI",
+        "test_login_post_invalid_password_shows_error_message": "Login Error Display",
+        "test_register_post_password_mismatch_shows_validation": "Register Password Mismatch",
+        "test_register_non_customer_role_shows_role_error": "Register Non-Customer Rejected",
+        "test_register_customer_web_post_redirects_to_customer_area": "Customer Register Redirect"
       },
       "descriptions": {
-        "test_home_page_includes_header_main_footer_layout": "Verifies GET / returns 200 and HTML containing site-header, main, site-footer, and base.css link.",
-        "test_login_page_has_post_form_email_password": "Verifies GET /login returns 200 with POST form, email/password fields, submit button, navbar, and register link.",
-        "test_register_page_inherits_layout_and_flash_slot": "Verifies GET /register returns 200 with customer registration form, shared chrome, hidden customer role, and that base.html includes the flash_messages partial.",
-        "test_web_login_success_redirects_to_home": "Registers a customer via POST /register, logs out, then POST /login with the same credentials returns 302 to home (not login)."
+        "test_login_page_renders_auth_form_and_register_link": "Verifies GET /login serves auth-page/auth-card, POST form fields email and password, btn-primary-fk, and a register link.",
+        "test_register_page_renders_confirm_password_and_role_select": "Verifies GET /register includes confirm_password, role select, and full registration fields inside auth layout.",
+        "test_login_post_invalid_password_shows_error_message": "After seeding a user, POST /login with wrong password returns 200 with form-errors and the generic invalid credentials message.",
+        "test_register_post_password_mismatch_shows_validation": "POST /register with different password and confirm_password returns 200 with Passwords do not match and confirm field error markup.",
+        "test_register_non_customer_role_shows_role_error": "POST /register with role seller returns 200 with validation UI (customer-only self-registration).",
+        "test_register_customer_web_post_redirects_to_customer_area": "POST /register with valid customer data returns 302 to /customer per role-based redirect."
       },
       "error_messages": {
-        "test_home_page_includes_header_main_footer_layout": "Home page must render the shared layout (header, main, footer) and link base.css.",
-        "test_login_page_has_post_form_email_password": "Login page must expose a POST form with email and password fields.",
-        "test_register_page_inherits_layout_and_flash_slot": "Register page must use the base layout, customer role field, and base template must include flash_messages.",
-        "test_web_login_success_redirects_to_home": "Valid web form login must redirect to the home route."
+        "test_login_page_renders_auth_form_and_register_link": "Login page must render the auth card and email/password form.",
+        "test_register_page_renders_confirm_password_and_role_select": "Register page must include confirm password and role selection.",
+        "test_login_post_invalid_password_shows_error_message": "Invalid login must show the error summary without exposing whether the email exists.",
+        "test_register_post_password_mismatch_shows_validation": "Mismatched passwords must surface validation on the register page.",
+        "test_register_non_customer_role_shows_role_error": "Non-customer self-registration must be rejected in the UI.",
+        "test_register_customer_web_post_redirects_to_customer_area": "Successful customer registration must redirect to the customer home path."
       }
     },
     "dynamic": {
@@ -78,94 +86,114 @@
       "tests": [
         {
           "isMandatory": true,
-          "name": "Home page base layout visible",
-          "description": "Home should show navbar, main content, and footer from the base layout.",
-          "path": "/",
-          "captureScreenshot": true,
-          "actions": [],
-          "assertions": [
-            {
-              "type": "url",
-              "value": "/",
-              "error_message": "Expected home URL /"
-            },
-            {
-              "type": "visible",
-              "selector": ".site-header",
-              "error_message": "Site header not visible"
-            },
-            {
-              "type": "exists",
-              "selector": "main .page-title",
-              "error_message": "Main page title not found"
-            },
-            {
-              "type": "visible",
-              "selector": ".site-footer",
-              "error_message": "Footer not visible"
-            }
-          ]
-        },
-        {
-          "isMandatory": true,
-          "name": "Login page form structure",
-          "description": "Login page must expose POST form with email and password and link to register.",
+          "name": "Login page auth card and form",
+          "description": "Login route shows auth card, POST form, email and password inputs, and link to create an account.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [],
           "assertions": [
             {
+              "type": "url",
+              "value": "/login",
+              "error_message": "Expected /login"
+            },
+            {
               "type": "visible",
-              "selector": "form[method='post']",
-              "error_message": "Login POST form not found"
+              "selector": ".auth-card",
+              "error_message": "Auth card not visible"
             },
             {
               "type": "exists",
-              "selector": "input[name='email']",
-              "error_message": "Email input not found"
+              "selector": "form[method='post'] input[name='email']",
+              "error_message": "Email field not found"
             },
             {
               "type": "exists",
-              "selector": "input[name='password']",
-              "error_message": "Password input not found"
+              "selector": "form[method='post'] input[name='password']",
+              "error_message": "Password field not found"
             },
             {
               "type": "visible",
-              "selector": "button[type='submit']",
-              "error_message": "Submit button not found"
+              "selector": "button.btn-primary-fk[type='submit']",
+              "error_message": "Primary submit button not found"
             },
             {
               "type": "visible",
-              "selector": "a[href*='register']",
-              "error_message": "Register link not found"
+              "selector": ".auth-footer-link a[href*='register']",
+              "error_message": "Register link not visible"
             }
           ]
         },
         {
           "isMandatory": true,
-          "name": "Register logout and web login to home",
-          "description": "Creates a customer via the register form, logs out, then logs in with the same email and password and reaches home (matches server-side session flow).",
+          "name": "Register page form structure",
+          "description": "Register route shows auth card, confirm password, role select, and login cross-link.",
+          "path": "/register",
+          "captureScreenshot": true,
+          "actions": [],
+          "assertions": [
+            {
+              "type": "url",
+              "value": "/register",
+              "error_message": "Expected /register"
+            },
+            {
+              "type": "visible",
+              "selector": ".auth-card",
+              "error_message": "Register auth card not visible"
+            },
+            {
+              "type": "exists",
+              "selector": "input[name='confirm_password']",
+              "error_message": "Confirm password field not found"
+            },
+            {
+              "type": "exists",
+              "selector": "select[name='role']",
+              "error_message": "Role select not found"
+            },
+            {
+              "type": "visible",
+              "selector": ".auth-footer-link a[href*='login']",
+              "error_message": "Log in link not visible"
+            }
+          ]
+        },
+        {
+          "isMandatory": true,
+          "name": "Register logout and login to customer home",
+          "description": "Creates a customer via the register form, logs out, logs in with the same credentials, and lands on /customer (matches pytest credentials pattern).",
           "path": "/register",
           "captureScreenshot": true,
           "actions": [
             {
               "type": "fill",
               "selector": "input[name='name']",
-              "value": "Playwright Task4"
+              "value": "Task Five Browser"
             },
             {
               "type": "fill",
               "selector": "input[name='email']",
-              "value": "task4playwright@example.com"
+              "value": "task5browser@example.com"
             },
             {
               "type": "fill",
               "selector": "input[name='password']",
-              "value": "Task4Test!pass"
+              "value": "Task5Dyn!pass"
+            },
+            {
+              "type": "fill",
+              "selector": "input[name='confirm_password']",
+              "value": "Task5Dyn!pass"
+            },
+            {
+              "type": "fill",
+              "selector": "select[name='role']",
+              "value": "customer"
             },
             {
               "type": "click",
-              "selector": "button[type='submit']"
+              "selector": "button.btn-primary-fk[type='submit']"
             },
             {
               "type": "wait",
@@ -190,32 +218,32 @@
             {
               "type": "fill",
               "selector": "input[name='email']",
-              "value": "task4playwright@example.com"
+              "value": "task5browser@example.com"
             },
             {
               "type": "fill",
               "selector": "input[name='password']",
-              "value": "Task4Test!pass"
+              "value": "Task5Dyn!pass"
             },
             {
               "type": "click",
-              "selector": "button[type='submit']"
+              "selector": "button.btn-primary-fk[type='submit']"
             },
             {
               "type": "wait",
-              "duration": 2000
+              "duration": 2500
             }
           ],
           "assertions": [
             {
               "type": "url",
-              "value": "/",
-              "error_message": "Expected redirect to home / after login"
+              "value": "/customer",
+              "error_message": "Expected /customer after login"
             },
             {
               "type": "visible",
-              "selector": "main .page-title",
-              "error_message": "Home page title not visible after login"
+              "selector": "main",
+              "error_message": "Main not visible after login"
             }
           ]
         }
