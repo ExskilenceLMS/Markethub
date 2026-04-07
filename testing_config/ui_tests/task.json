@@ -8,22 +8,32 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "templates/auth/login.html",
-            "title": "Login page structure",
-            "description": "Login UI extends base, uses auth layout, POST form with email and password, primary submit, and cross-link to register.",
+            "file": "templates/admin/dashboard.html",
+            "title": "Admin dashboard content structure",
+            "description": "Dashboard extends admin base, shows header, welcome copy, and a statistics grid with stat cards.",
             "points": 10,
-            "requiredElements": ["form", "input", "button", "label"],
-            "requiredIdentifiers": ["auth-page", "auth-card", "btn-primary-fk"],
+            "requiredElements": ["header", "section", "h1"],
+            "requiredIdentifiers": ["admin-page-header", "stat-grid", "page-title"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           },
           {
-            "file": "templates/auth/register.html",
-            "title": "Register page structure",
-            "description": "Registration UI includes name, email, password, confirm password, role control, and link back to login.",
-            "points": 10,
-            "requiredElements": ["form", "input", "select", "label", "button"],
-            "requiredIdentifiers": ["auth-page", "auth-card", "confirm_password"],
+            "file": "templates/partials/stat_card.html",
+            "title": "Stat card macro markup",
+            "description": "Reusable stat card partial used on the admin dashboard.",
+            "points": 6,
+            "requiredElements": ["div", "p"],
+            "requiredIdentifiers": ["stat-card", "stat-card__label", "stat-card__value"],
+            "error_message": "{requiredElements} not found",
+            "error_message_identifiers": "{requiredIdentifiers} not found"
+          },
+          {
+            "file": "templates/partials/admin_sidebar.html",
+            "title": "Admin sidebar navigation",
+            "description": "Controlled admin UI exposes sidebar links for dashboard, users, sellers, and categories.",
+            "points": 8,
+            "requiredElements": ["aside", "nav", "a"],
+            "requiredIdentifiers": ["admin-sidebar", "admin-sidebar__link"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           }
@@ -34,10 +44,10 @@
         "rules": [
           {
             "file": "static/css/style.css",
-            "title": "Auth theme styles",
-            "description": "Flipkart-style auth page, card, primary button, and footer link styling for registration and login.",
+            "title": "Admin layout and stat card styles",
+            "description": "Theme styles for admin shell, sidebar, main column, and dashboard stat cards.",
             "points": 10,
-            "requiredSelectors": [".auth-page", ".auth-card", ".btn-primary-fk", ".auth-footer-link"],
+            "requiredSelectors": [".admin-layout", ".admin-sidebar", ".admin-main", ".stat-card", ".stat-grid"],
             "error_message": "{requiredSelectors} not found"
           }
         ]
@@ -48,30 +58,30 @@
       "requiresFlask": false,
       "testFile": "testing_config/py_tests/task.py",
       "timeout": 45000,
-      "points": 45,
+      "points": 48,
       "runTests": {
-        "test_login_page_renders_auth_form_and_register_link": "Login Page UI",
-        "test_register_page_renders_confirm_password_and_role_select": "Register Page UI",
-        "test_login_post_invalid_password_shows_error_message": "Login Error Display",
-        "test_register_post_password_mismatch_shows_validation": "Register Password Mismatch",
-        "test_register_non_customer_role_shows_role_error": "Register Non-Customer Rejected",
-        "test_register_customer_web_post_redirects_to_customer_area": "Customer Register Redirect"
+        "test_unauthenticated_get_admin_redirects_to_login": "Guest Blocked From Admin",
+        "test_customer_session_get_admin_redirects_to_login": "Customer Blocked From Admin",
+        "test_admin_get_dashboard_returns_200_with_layout": "Admin Dashboard Loads",
+        "test_admin_dashboard_renders_stat_grid_with_user_counts": "Admin Stats Grid",
+        "test_admin_users_page_accessible_for_admin_session": "Admin Users Page",
+        "test_admin_login_redirects_to_admin_dashboard": "Admin Login Lands On Admin"
       },
       "descriptions": {
-        "test_login_page_renders_auth_form_and_register_link": "Verifies GET /login serves auth-page/auth-card, POST form fields email and password, btn-primary-fk, and a register link.",
-        "test_register_page_renders_confirm_password_and_role_select": "Verifies GET /register includes confirm_password, role select, and full registration fields inside auth layout.",
-        "test_login_post_invalid_password_shows_error_message": "After seeding a user, POST /login with wrong password returns 200 with form-errors and the generic invalid credentials message.",
-        "test_register_post_password_mismatch_shows_validation": "POST /register with different password and confirm_password returns 200 with Passwords do not match and confirm field error markup.",
-        "test_register_non_customer_role_shows_role_error": "POST /register with role seller returns 200 with validation UI (customer-only self-registration).",
-        "test_register_customer_web_post_redirects_to_customer_area": "POST /register with valid customer data returns 302 to /customer per role-based redirect."
+        "test_unauthenticated_get_admin_redirects_to_login": "Verifies GET /admin/ without a session returns 302 to the web login route.",
+        "test_customer_session_get_admin_redirects_to_login": "Verifies a logged-in customer receives 302 to login when requesting /admin/ (role guard).",
+        "test_admin_get_dashboard_returns_200_with_layout": "Verifies an admin user sees HTTP 200 with admin-layout, sidebar, and dashboard title.",
+        "test_admin_dashboard_renders_stat_grid_with_user_counts": "Verifies stat-grid and multiple stat-card blocks with role labels after seeding three users.",
+        "test_admin_users_page_accessible_for_admin_session": "Verifies GET /admin/users returns 200 with admin layout and Users copy for an admin session.",
+        "test_admin_login_redirects_to_admin_dashboard": "Verifies POST /login as admin returns 302 to /admin per role-based redirect."
       },
       "error_messages": {
-        "test_login_page_renders_auth_form_and_register_link": "Login page must render the auth card and email/password form.",
-        "test_register_page_renders_confirm_password_and_role_select": "Register page must include confirm password and role selection.",
-        "test_login_post_invalid_password_shows_error_message": "Invalid login must show the error summary without exposing whether the email exists.",
-        "test_register_post_password_mismatch_shows_validation": "Mismatched passwords must surface validation on the register page.",
-        "test_register_non_customer_role_shows_role_error": "Non-customer self-registration must be rejected in the UI.",
-        "test_register_customer_web_post_redirects_to_customer_area": "Successful customer registration must redirect to the customer home path."
+        "test_unauthenticated_get_admin_redirects_to_login": "Unauthenticated users must be redirected from /admin to login.",
+        "test_customer_session_get_admin_redirects_to_login": "Customers must not access the admin blueprint.",
+        "test_admin_get_dashboard_returns_200_with_layout": "Admins must receive the dashboard page with layout chrome.",
+        "test_admin_dashboard_renders_stat_grid_with_user_counts": "Dashboard must render the statistics grid and cards.",
+        "test_admin_users_page_accessible_for_admin_session": "Admins must open /admin/users successfully.",
+        "test_admin_login_redirects_to_admin_dashboard": "Admin web login must redirect to the admin dashboard path."
       }
     },
     "dynamic": {
@@ -86,144 +96,45 @@
       "tests": [
         {
           "isMandatory": true,
-          "name": "Login page auth card and form",
-          "description": "Login route shows auth card, POST form, email and password inputs, and link to create an account.",
-          "path": "/login",
+          "name": "Unauthenticated admin URL redirects to login",
+          "description": "Opening /admin/ without a session should send the browser to the login page (controlled access).",
+          "path": "/admin/",
           "captureScreenshot": true,
-          "actions": [],
+          "actions": [
+            {
+              "type": "wait",
+              "duration": 800
+            }
+          ],
           "assertions": [
             {
               "type": "url",
               "value": "/login",
-              "error_message": "Expected /login"
+              "error_message": "Expected redirect to /login"
             },
             {
               "type": "visible",
-              "selector": ".auth-card",
-              "error_message": "Auth card not visible"
-            },
-            {
-              "type": "exists",
               "selector": "form[method='post'] input[name='email']",
-              "error_message": "Email field not found"
-            },
-            {
-              "type": "exists",
-              "selector": "form[method='post'] input[name='password']",
-              "error_message": "Password field not found"
-            },
-            {
-              "type": "visible",
-              "selector": "button.btn-primary-fk[type='submit']",
-              "error_message": "Primary submit button not found"
-            },
-            {
-              "type": "visible",
-              "selector": ".auth-footer-link a[href*='register']",
-              "error_message": "Register link not visible"
+              "error_message": "Login form not visible after redirect"
             }
           ]
         },
         {
           "isMandatory": true,
-          "name": "Register page form structure",
-          "description": "Register route shows auth card, confirm password, role select, and login cross-link.",
-          "path": "/register",
-          "captureScreenshot": true,
-          "actions": [],
-          "assertions": [
-            {
-              "type": "url",
-              "value": "/register",
-              "error_message": "Expected /register"
-            },
-            {
-              "type": "visible",
-              "selector": ".auth-card",
-              "error_message": "Register auth card not visible"
-            },
-            {
-              "type": "exists",
-              "selector": "input[name='confirm_password']",
-              "error_message": "Confirm password field not found"
-            },
-            {
-              "type": "exists",
-              "selector": "select[name='role']",
-              "error_message": "Role select not found"
-            },
-            {
-              "type": "visible",
-              "selector": ".auth-footer-link a[href*='login']",
-              "error_message": "Log in link not visible"
-            }
-          ]
-        },
-        {
-          "isMandatory": true,
-          "name": "Register logout and login to customer home",
-          "description": "Creates a customer via the register form, logs out, logs in with the same credentials, and lands on /customer (matches pytest credentials pattern).",
-          "path": "/register",
+          "name": "Seeded admin login and dashboard UI",
+          "description": "Uses seed user admin@example.com / user123 from database/seed_data.sql; lands on /admin with layout and opens Users from the sidebar.",
+          "path": "/login",
           "captureScreenshot": true,
           "actions": [
             {
               "type": "fill",
-              "selector": "input[name='name']",
-              "value": "Task Five Browser"
-            },
-            {
-              "type": "fill",
               "selector": "input[name='email']",
-              "value": "task5browser@example.com"
+              "value": "admin@example.com"
             },
             {
               "type": "fill",
               "selector": "input[name='password']",
-              "value": "Task5Dyn!pass"
-            },
-            {
-              "type": "fill",
-              "selector": "input[name='confirm_password']",
-              "value": "Task5Dyn!pass"
-            },
-            {
-              "type": "fill",
-              "selector": "select[name='role']",
-              "value": "customer"
-            },
-            {
-              "type": "click",
-              "selector": "button.btn-primary-fk[type='submit']"
-            },
-            {
-              "type": "wait",
-              "duration": 2000
-            },
-            {
-              "type": "click",
-              "selector": "a[href*='logout']"
-            },
-            {
-              "type": "wait",
-              "duration": 1500
-            },
-            {
-              "type": "click",
-              "selector": "a[href*='login']"
-            },
-            {
-              "type": "wait",
-              "duration": 1000
-            },
-            {
-              "type": "fill",
-              "selector": "input[name='email']",
-              "value": "task5browser@example.com"
-            },
-            {
-              "type": "fill",
-              "selector": "input[name='password']",
-              "value": "Task5Dyn!pass"
+              "value": "user123"
             },
             {
               "type": "click",
@@ -232,18 +143,31 @@
             {
               "type": "wait",
               "duration": 2500
+            },
+            {
+              "type": "click",
+              "selector": "a.admin-sidebar__link[href*='users']"
+            },
+            {
+              "type": "wait",
+              "duration": 1500
             }
           ],
           "assertions": [
             {
               "type": "url",
-              "value": "/customer",
-              "error_message": "Expected /customer after login"
+              "value": "/admin/users",
+              "error_message": "Expected /admin/users after sidebar click"
             },
             {
               "type": "visible",
-              "selector": "main",
-              "error_message": "Main not visible after login"
+              "selector": ".admin-layout",
+              "error_message": "Admin layout not visible"
+            },
+            {
+              "type": "exists",
+              "selector": ".admin-sidebar",
+              "error_message": "Admin sidebar not found"
             }
           ]
         }

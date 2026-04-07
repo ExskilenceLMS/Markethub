@@ -29,123 +29,129 @@ def client():
             db.drop_all()
 
 
-def test_login_page_renders_auth_form_and_register_link(client):
-    """GET /login returns the auth card with email/password POST form and link to register."""
+def _login_web(client, email, password):
+    return client.post(
+        "/login",
+        data={"email": email, "password": password},
+        follow_redirects=False,
+    )
+
+
+def test_unauthenticated_get_admin_redirects_to_login(client):
+    """Guests hitting /admin are redirected to the web login page."""
     try:
-        response = client.get("/login")
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "auth-page" in html
-        assert "auth-card" in html
-        assert 'method="post"' in html.lower()
-        assert 'name="email"' in html
-        assert 'name="password"' in html
-        assert "btn-primary-fk" in html
-        assert "register" in html.lower()
-    except Exception as error:
-        pytest.fail(f"Login page UI check failed: {error}")
-
-
-def test_register_page_renders_confirm_password_and_role_select(client):
-    """GET /register returns confirm password, role select, and auth chrome."""
-    try:
-        response = client.get("/register")
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "auth-page" in html and "auth-card" in html
-        assert 'name="confirm_password"' in html
-        assert 'name="role"' in html
-        assert 'name="name"' in html and 'name="email"' in html
-        assert "customer" in html
-    except Exception as error:
-        pytest.fail(f"Register page UI check failed: {error}")
-
-
-def test_login_post_invalid_password_shows_error_message(client):
-    """Invalid web login re-renders login with standard error summary (no user enumeration)."""
-    try:
-        with app.app_context():
-            from repositories.user_repository import UserRepository
-            from utils.passwords import hash_password
-
-            UserRepository().create_user(
-                "U1",
-                "u1@example.com",
-                hash_password("realpass"),
-                "customer",
-            )
-
-        response = client.post(
-            "/login",
-            data={"email": "u1@example.com", "password": "wrongpass"},
-        )
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "Invalid email or password" in html
-        assert "form-errors" in html
-    except Exception as error:
-        pytest.fail(f"Login error display check failed: {error}")
-
-
-def test_register_post_password_mismatch_shows_validation(client):
-    """Mismatched passwords re-render register with field-level error for confirm_password."""
-    try:
-        response = client.post(
-            "/register",
-            data={
-                "name": "Test User",
-                "email": "mismatch@example.com",
-                "password": "one-pass",
-                "confirm_password": "other-pass",
-                "role": "customer",
-            },
-        )
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "Passwords do not match" in html
-        assert "err-confirm_password" in html or "confirm_password" in html
-    except Exception as error:
-        pytest.fail(f"Password mismatch UI check failed: {error}")
-
-
-def test_register_non_customer_role_shows_role_error(client):
-    """Choosing seller/admin on the register form must show self-register role validation."""
-    try:
-        response = client.post(
-            "/register",
-            data={
-                "name": "Seller Try",
-                "email": "sellertry@example.com",
-                "password": "samepass",
-                "confirm_password": "samepass",
-                "role": "seller",
-            },
-        )
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "Self-registration is only allowed" in html
-        assert "form-errors" in html or "field-error" in html
-    except Exception as error:
-        pytest.fail(f"Non-customer register rejection UI check failed: {error}")
-
-
-def test_register_customer_web_post_redirects_to_customer_area(client):
-    """Successful customer registration redirects to the customer route (role-based landing)."""
-    try:
-        response = client.post(
-            "/register",
-            data={
-                "name": "New Customer",
-                "email": "newcust@example.com",
-                "password": "RegPass!9",
-                "confirm_password": "RegPass!9",
-                "role": "customer",
-            },
-            follow_redirects=False,
-        )
+        response = client.get("/admin/", follow_redirects=False)
         assert response.status_code == 302
         loc = response.headers.get("Location", "")
-        path = urlparse(loc).path
-        assert path.rstrip("/") == "/customer"
+        assert "login" in loc.lower()
     except Exception as error:
-        pytest.fail(f"Customer register redirect check failed: {error}")
+        pytest.fail(f"Guest admin redirect check failed: {error}")
+
+
+def test_customer_session_get_admin_redirects_to_login(client):
+    """Non-admin roles cannot access the admin blueprint (controlled UI access)."""
+    try:
+        from repositories.user_repository import UserRepository
+        from utils.passwords import hash_password
+
+        UserRepository().create_user(
+            "Cust",
+            "custonly@example.com",
+            hash_password("cust-pass-9"),
+            "customer",
+        )
+        _login_web(client, "custonly@example.com", "cust-pass-9")
+        response = client.get("/admin/", follow_redirects=False)
+        assert response.status_code == 302
+        loc = response.headers.get("Location", "")
+        assert "login" in loc.lower()
+    except Exception as error:
+        pytest.fail(f"Customer blocked from admin check failed: {error}")
+
+
+def test_admin_get_dashboard_returns_200_with_layout(client):
+    """Admin session can load the dashboard with layout chrome from base_admin."""
+    try:
+        from repositories.user_repository import UserRepository
+        from utils.passwords import hash_password
+
+        UserRepository().create_user(
+            "Admin User",
+            "adminuser@example.com",
+            hash_password("Adm1n!task6"),
+            "admin",
+        )
+        _login_web(client, "adminuser@example.com", "Adm1n!task6")
+        response = client.get("/admin/")
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert "admin-layout" in html
+        assert "admin-sidebar" in html
+        assert "Admin dashboard" in html
+    except Exception as error:
+        pytest.fail(f"Admin dashboard load check failed: {error}")
+
+
+def test_admin_dashboard_renders_stat_grid_with_user_counts(client):
+    """Dashboard shows stat cards populated from AdminService counts."""
+    try:
+        from repositories.user_repository import UserRepository
+        from utils.passwords import hash_password
+
+        repo = UserRepository()
+        repo.create_user("A", "a1@example.com", hash_password("x"), "admin")
+        repo.create_user("S", "s1@example.com", hash_password("x"), "seller")
+        repo.create_user("C", "c1@example.com", hash_password("x"), "customer")
+
+        _login_web(client, "a1@example.com", "x")
+        response = client.get("/admin/")
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert "stat-grid" in html
+        assert html.count("stat-card") >= 6
+        assert "Total users" in html
+        assert "Admins" in html and "Customers" in html
+    except Exception as error:
+        pytest.fail(f"Admin stat grid check failed: {error}")
+
+
+def test_admin_users_page_accessible_for_admin_session(client):
+    """Sidebar route /admin/users renders for an authenticated admin."""
+    try:
+        from repositories.user_repository import UserRepository
+        from utils.passwords import hash_password
+
+        UserRepository().create_user(
+            "Admin Two",
+            "admintwo@example.com",
+            hash_password("pass-two-8"),
+            "admin",
+        )
+        _login_web(client, "admintwo@example.com", "pass-two-8")
+        response = client.get("/admin/users")
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert "admin-layout" in html
+        assert "Users" in html
+    except Exception as error:
+        pytest.fail(f"Admin users page check failed: {error}")
+
+
+def test_admin_login_redirects_to_admin_dashboard(client):
+    """Web login as admin redirects to /admin/ (role-based landing)."""
+    try:
+        from repositories.user_repository import UserRepository
+        from utils.passwords import hash_password
+
+        UserRepository().create_user(
+            "Redirect Admin",
+            "rediradmin@example.com",
+            hash_password("Redir!99"),
+            "admin",
+        )
+        response = _login_web(client, "rediradmin@example.com", "Redir!99")
+        assert response.status_code == 302
+        path = urlparse(response.headers.get("Location", "")).path
+        assert path.rstrip("/") == "/admin"
+    except Exception as error:
+        pytest.fail(f"Admin login redirect check failed: {error}")
