@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from 'partials/form_errors.html' import form_error_summary, field_errors %}
+
+{% block title %}Register — MarketHub{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h1>Create account</h1>
+    <p style="color:var(--muted);font-size:0.9rem;margin-top:-0.5rem">Self-registration is for customers only.</p>
+    {{ form_error_summary(form_errors or {}) }}
+    <form method="post" action="{{ url_for('web.register') }}" novalidate>
+      <input type="hidden" name="role" value="customer">
+      <div class="form-group">
+        <label for="name">Name</label>
+        <input id="name" name="name" type="text" autocomplete="name"
+               value="{{ request.form.get('name', '') }}"
+               class="{% if form_errors and form_errors.get('name') %}user-error{% endif %}">
+        {{ field_errors(form_errors or {}, 'name') }}
+      </div>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email"
+               value="{{ request.form.get('email', '') }}"
+               class="{% if form_errors and form_errors.get('email') %}user-error{% endif %}">
+        {{ field_errors(form_errors or {}, 'email') }}
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="new-password"
+               class="{% if form_errors and form_errors.get('password') %}user-error{% endif %}">
+        {{ field_errors(form_errors or {}, 'password') }}
+      </div>
+      <button type="submit" class="btn">Register</button>
+    </form>
+    <p style="margin-top:1rem;font-size:0.9rem;color:var(--muted)">
+      Already have an account? <a href="{{ url_for('web.login') }}">Log in</a>
+    </p>
+  </div>
+{% endblock %}

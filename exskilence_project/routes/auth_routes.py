@@ -2,6 +2,7 @@ from flask import Blueprint, request, session
 
 from services.user_service import UserService
 from utils.response import success_response
+from utils.session_util import set_user_session
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -17,12 +18,7 @@ def register():
 def login():
     data = request.get_json(silent=True)
     user = UserService().login(data)
-    session.clear()
-    session.permanent = True
-    session["user_id"] = user["id"]
-    session["role"] = user["role"]
-    session["name"] = user["name"]
-    session["email"] = user["email"]
+    set_user_session(session, user)
     return success_response(data=user, message="Logged in successfully")
 
 

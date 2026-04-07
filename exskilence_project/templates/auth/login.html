@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from 'partials/form_errors.html' import form_error_summary, field_errors %}
+
+{% block title %}Log in — MarketHub{% endblock %}
+
+{% block content %}
+  <div class="card">
+    <h1>Log in</h1>
+    {{ form_error_summary(form_errors or {}) }}
+    <form method="post" action="{{ url_for('web.login') }}" novalidate>
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="username"
+               value="{{ request.form.get('email', '') }}"
+               class="{% if form_errors and form_errors.get('email') %}user-error{% endif %}">
+        {{ field_errors(form_errors or {}, 'email') }}
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password"
+               class="{% if form_errors and form_errors.get('password') %}user-error{% endif %}">
+        {{ field_errors(form_errors or {}, 'password') }}
+      </div>
+      <button type="submit" class="btn">Log in</button>
+    </form>
+    <p style="margin-top:1rem;font-size:0.9rem;color:var(--muted)">
+      No account? <a href="{{ url_for('web.register') }}">Register</a>
+    </p>
+  </div>
+{% endblock %}

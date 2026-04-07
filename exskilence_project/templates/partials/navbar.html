@@ -1,0 +1,24 @@
+<header class="site-header">
+  <nav class="nav-inner" aria-label="Main">
+    <a class="brand" href="{{ url_for('web.home') }}">MarketHub</a>
+    <ul class="nav-links">
+      {% if session.get('user_id') %}
+        <li class="nav-muted">{{ session.get('name') or session.get('email') }}</li>
+        {% if session.get('role') == 'admin' %}
+          <li><a href="{{ url_for('web.admin_dashboard') }}">Admin</a></li>
+        {% endif %}
+        {% if session.get('role') == 'seller' %}
+          <li><a href="{{ url_for('web.staff_dashboard') }}">Staff</a></li>
+        {% endif %}
+        {% if session.get('role') == 'customer' %}
+          <li><a href="{{ url_for('web.customer_home') }}">Shop</a></li>
+        {% endif %}
+        <li><a href="{{ url_for('web.logout') }}">Log out</a></li>
+      {% else %}
+        <li><a href="{{ url_for('web.login') }}">Log in</a></li>
+        <li><a href="{{ url_for('web.register') }}">Register</a></li>
+      {% endif %}
+      <li><a href="{{ url_for('health.health') }}">API health</a></li>
+    </ul>
+  </nav>
+</header>

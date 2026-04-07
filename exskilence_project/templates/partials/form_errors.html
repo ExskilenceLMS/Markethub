@@ -1,0 +1,20 @@
+{# Backend validation only — display errors passed from the route (form_errors dict). #}
+{% macro form_error_summary(form_errors) %}
+  {% if form_errors and form_errors.get('_form') %}
+    <div class="form-errors" role="alert">
+      {% for msg in form_errors['_form'] %}
+        <p>{{ msg }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endmacro %}
+
+{% macro field_errors(form_errors, field_name) %}
+  {% if form_errors and form_errors.get(field_name) %}
+    <ul class="field-error" id="err-{{ field_name }}">
+      {% for msg in form_errors[field_name] %}
+        <li>{{ msg }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endmacro %}
