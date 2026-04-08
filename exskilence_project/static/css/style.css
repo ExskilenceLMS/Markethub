@@ -757,3 +757,51 @@ main:has(.admin-layout) {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+.customer-product-card__cart-form {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--fk-border);
+}
+
+.customer-product-card__cart-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.customer-cart__qty-input {
+  width: 4rem;
+  padding: 0.45rem 0.5rem;
+  border: 1px solid var(--fk-border);
+  border-radius: 2px;
+  font: inherit;
+}
+
+.customer-cart-card {
+  overflow-x: auto;
+}
+
+.customer-cart__qty-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.customer-cart__total {
+  margin: 1rem 0 0;
+  font-size: 1.1rem;
+  text-align: right;
+}
+
+.customer-cart__clear {
+  background: #fff;
+  color: var(--fk-blue);
+  border: 1px solid var(--fk-blue);
+}
+
+.customer-cart__clear:hover {
+  background: rgba(40, 116, 240, 0.06);
+}

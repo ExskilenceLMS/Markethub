@@ -8,7 +8,7 @@
     <header class="admin-page-header admin-page-header--row">
       <div>
         <h1 class="page-title">Products</h1>
-        <p class="customer-hub__intro">View-only catalog. Prices and availability are shown as listed.</p>
+        <p class="customer-hub__intro">Add to cart with quantity; prices and stock are shown as listed.</p>
       </div>
     </header>
 
@@ -44,6 +44,17 @@
               {% if p.description %}
                 <p class="customer-product-card__desc">{{ p.description }}</p>
               {% endif %}
+              <form method="post" action="{{ url_for('customer.cart_add') }}" class="customer-product-card__cart-form">
+                {% if selected_category_id is not none %}
+                  <input type="hidden" name="redirect_category_id" value="{{ selected_category_id }}">
+                {% endif %}
+                <input type="hidden" name="product_id" value="{{ p.id }}">
+                <label class="form-label-block" for="qty-{{ p.id }}">Qty</label>
+                <div class="customer-product-card__cart-row">
+                  <input id="qty-{{ p.id }}" name="quantity" type="number" min="1" step="1" value="1" class="customer-cart__qty-input" required>
+                  <button type="submit" class="btn-primary-fk btn-inline">Add to cart</button>
+                </div>
+              </form>
             </div>
           </li>
         {% endfor %}

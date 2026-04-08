@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Cart — MarketHub{% endblock %}
+
+{% block content %}
+  <div class="customer-hub">
+    <p class="customer-hub__back"><a href="{{ url_for('customer.dashboard') }}">← My account</a></p>
+    <header class="admin-page-header admin-page-header--row">
+      <div>
+        <h1 class="page-title">Cart</h1>
+        <p class="customer-hub__intro">Update quantities or remove lines; total updates automatically.</p>
+      </div>
+      {% if cart_items %}
+        <form method="post" action="{{ url_for('customer.cart_clear') }}" class="inline-form" onsubmit="return confirm('Remove all items from cart?');">
+          <button type="submit" class="btn-primary-fk btn-inline customer-cart__clear">Clear cart</button>
+        </form>
+      {% endif %}
+    </header>
+
+    {% if cart_items %}
+      <div class="data-card customer-cart-card">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Qty</th>
+              <th>Subtotal</th>
+              <th class="data-table__actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for line in cart_items %}
+              <tr>
+                <td>
+                  <strong>{{ line.name }}</strong>
+                </td>
+                <td>₹{{ "%.2f"|format(line.price|float) }}</td>
+                <td>
+                  <form method="post" action="{{ url_for('customer.cart_update_line', line_id=line.id) }}" class="customer-cart__qty-form">
+                    <input type="number" name="quantity" min="1" step="1" value="{{ line.quantity }}" class="customer-cart__qty-input" aria-label="Quantity for {{ line.name }}">
+                    <button type="submit" class="link-button">Update</button>
+                  </form>
+                </td>
+                <td>₹{{ "%.2f"|format(line.line_total|float) }}</td>
+                <td class="data-table__actions">
+                  <form method="post" action="{{ url_for('customer.cart_remove_line', line_id=line.id) }}" class="inline-form" onsubmit="return confirm('Remove this item?');">
+                    <button type="submit" class="link-button danger">Remove</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="customer-cart__total"><strong>Total:</strong> ₹{{ "%.2f"|format(total_amount|float) }}</p>
+      </div>
+    {% else %}
+      <div class="data-card">
+        <p class="admin-welcome">Your cart is empty.</p>
+        <p><a class="btn-primary-fk btn-inline" href="{{ url_for('customer.products') }}">Browse products</a></p>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

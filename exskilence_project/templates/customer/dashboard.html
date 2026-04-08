@@ -5,7 +5,7 @@
 {% block content %}
   <div class="customer-hub">
     <h1 class="page-title">My account</h1>
-    <p class="customer-hub__intro">Browse categories and products. This area is view-only.</p>
+    <p class="customer-hub__intro">Browse categories and products; manage your saved cart below.</p>
 
     <div class="data-card customer-profile-card">
       <h2 class="customer-profile-card__title">Profile</h2>
@@ -17,6 +17,10 @@
     </div>
 
     <nav class="customer-hub__nav" aria-label="Shop">
+      <a class="staff-hub__card" href="{{ url_for('customer.cart') }}">
+        <strong>Cart</strong>
+        <span>View and edit your cart</span>
+      </a>
       <a class="staff-hub__card" href="{{ url_for('customer.categories') }}">
         <strong>Categories</strong>
         <span>Browse all departments</span>
