@@ -8,22 +8,22 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "templates/customer/dashboard.html",
-            "title": "Customer dashboard layout",
-            "description": "My account hub shows profile card and navigation to categories and products.",
+            "file": "templates/customer/cart.html",
+            "title": "Cart page structure",
+            "description": "Cart shows hub layout, line table or empty state, qty forms, and total or browse link.",
             "points": 10,
-            "requiredElements": ["h1", "h2", "nav", "dl", "dt", "dd"],
-            "requiredIdentifiers": ["customer-hub", "customer-profile-card", "customer-hub__nav"],
+            "requiredElements": ["header", "h1", "form", "table", "th", "td", "button"],
+            "requiredIdentifiers": ["customer-hub", "customer-cart-card", "customer-cart__total"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           },
           {
             "file": "templates/customer/products.html",
-            "title": "Customer catalog and filter",
-            "description": "Products page provides GET filter by category and a product card grid.",
+            "title": "Add-to-cart on product cards",
+            "description": "Each product card posts product_id and quantity to the cart add endpoint.",
             "points": 8,
-            "requiredElements": ["form", "select", "ul", "li", "header"],
-            "requiredIdentifiers": ["customer-hub", "customer-filter-form", "customer-product-grid"],
+            "requiredElements": ["form", "input", "button", "label", "ul", "li"],
+            "requiredIdentifiers": ["customer-product-card__cart-form", "customer-cart__qty-input"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           }
@@ -34,10 +34,10 @@
         "rules": [
           {
             "file": "static/css/style.css",
-            "title": "Customer hub and catalog styles",
-            "description": "Styling for customer dashboard, profile, category tiles, filters, and product cards.",
+            "title": "Cart and add-to-cart styles",
+            "description": "Styles for cart card, quantity inputs, product card cart row, and total.",
             "points": 10,
-            "requiredSelectors": [".customer-hub", ".customer-profile-card", ".customer-product-card", ".customer-filter-form"],
+            "requiredSelectors": [".customer-cart-card", ".customer-product-card__cart-form", ".customer-cart__total", ".customer-cart__qty-input"],
             "error_message": "{requiredSelectors} not found"
           }
         ]
@@ -50,28 +50,28 @@
       "timeout": 60000,
       "points": 48,
       "runTests": {
-        "test_guest_customer_dashboard_redirects_to_login": "Guest Blocked From Customer",
-        "test_customer_dashboard_shows_profile_and_shop_nav": "Customer Dashboard Content",
-        "test_customer_categories_page_renders_for_customer": "Customer Categories Page",
-        "test_customer_products_page_renders_catalog": "Customer Products Catalog",
-        "test_customer_login_redirects_to_customer_home": "Customer Login Redirect",
-        "test_non_customer_blocked_from_customer_routes": "Non-Customer Blocked"
+        "test_guest_cart_redirects_to_login": "Guest Cart Blocked",
+        "test_customer_cart_page_renders_when_empty": "Empty Cart Page",
+        "test_cart_add_post_redirects_to_products": "Add To Cart Redirect",
+        "test_cart_add_merges_quantity_same_product": "Cart Merge Same Product",
+        "test_cart_update_line_reflects_in_total": "Update Line Total",
+        "test_cart_clear_empties_cart": "Clear Cart"
       },
       "descriptions": {
-        "test_guest_customer_dashboard_redirects_to_login": "Verifies GET /customer/ without session returns 302 to the web login route.",
-        "test_customer_dashboard_shows_profile_and_shop_nav": "Verifies a logged-in customer sees My account, profile card, and links to categories and products.",
-        "test_customer_categories_page_renders_for_customer": "Verifies GET /customer/categories returns the customer hub and category grid or empty state.",
-        "test_customer_products_page_renders_catalog": "Verifies GET /customer/products shows the filter form and lists seeded-style products when they exist.",
-        "test_customer_login_redirects_to_customer_home": "Verifies POST /login as customer returns 302 to /customer.",
-        "test_non_customer_blocked_from_customer_routes": "Verifies a seller hitting /customer/ is redirected to login (role guard)."
+        "test_guest_cart_redirects_to_login": "Verifies GET /customer/cart without a customer session redirects to web login.",
+        "test_customer_cart_page_renders_when_empty": "Verifies a logged-in customer sees the cart page and empty-state messaging when there are no lines.",
+        "test_cart_add_post_redirects_to_products": "Verifies POST /customer/cart/add responds with a redirect to the products catalog.",
+        "test_cart_add_merges_quantity_same_product": "Verifies repeated adds for the same product_id increase quantity on one cart row and total matches.",
+        "test_cart_update_line_reflects_in_total": "Verifies POST /customer/cart/<id>/update changes quantity and the rendered total updates.",
+        "test_cart_clear_empties_cart": "Verifies POST /customer/cart/clear removes all lines and the page shows the empty cart message."
       },
       "error_messages": {
-        "test_guest_customer_dashboard_redirects_to_login": "Guests must not access the customer dashboard.",
-        "test_customer_dashboard_shows_profile_and_shop_nav": "Customer dashboard must show profile and shop navigation.",
-        "test_customer_categories_page_renders_for_customer": "Customers must open the categories browse page.",
-        "test_customer_products_page_renders_catalog": "Customers must see the catalog filter and product list.",
-        "test_customer_login_redirects_to_customer_home": "Customer login must land on the customer home path.",
-        "test_non_customer_blocked_from_customer_routes": "Only customers may use customer routes."
+        "test_guest_cart_redirects_to_login": "Guests must be redirected from the cart route.",
+        "test_customer_cart_page_renders_when_empty": "Empty cart must render for customers.",
+        "test_cart_add_post_redirects_to_products": "Add to cart must redirect to products.",
+        "test_cart_add_merges_quantity_same_product": "Same product adds must merge into one line.",
+        "test_cart_update_line_reflects_in_total": "Cart line update must refresh totals.",
+        "test_cart_clear_empties_cart": "Clear cart must remove all items."
       }
     },
     "dynamic": {
@@ -86,57 +86,8 @@
       "tests": [
         {
           "isMandatory": true,
-          "name": "Customer login opens My account dashboard",
-          "description": "Uses seed customer alice@example.com / user123 (database/seed_data.sql); expects /customer with profile hub.",
-          "path": "/login",
-          "captureScreenshot": true,
-          "actions": [
-            {
-              "type": "fill",
-              "selector": "input[name='email']",
-              "value": "alice@example.com"
-            },
-            {
-              "type": "fill",
-              "selector": "input[name='password']",
-              "value": "user123"
-            },
-            {
-              "type": "click",
-              "selector": "button.btn-primary-fk[type='submit']"
-            },
-            {
-              "type": "wait",
-              "duration": 2500
-            }
-          ],
-          "assertions": [
-            {
-              "type": "url",
-              "value": "/customer",
-              "error_message": "Expected redirect to /customer"
-            },
-            {
-              "type": "visible",
-              "selector": ".customer-hub",
-              "error_message": "Customer hub not visible"
-            },
-            {
-              "type": "visible",
-              "selector": ".customer-profile-card",
-              "error_message": "Profile card not visible"
-            },
-            {
-              "type": "exists",
-              "selector": ".customer-hub__nav a[href*='/customer/categories']",
-              "error_message": "Categories nav link missing"
-            }
-          ]
-        },
-        {
-          "isMandatory": true,
-          "name": "Customer opens All products from dashboard",
-          "description": "After customer login, opens the All products card and sees the catalog filter (seed data).",
+          "name": "Customer opens cart from navbar",
+          "description": "Seed customer alice@example.com / user123; after login, Cart nav opens /customer/cart with hub layout.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
@@ -160,7 +111,7 @@
             },
             {
               "type": "click",
-              "selector": "a[href*='/customer/products']"
+              "selector": ".nav-links > li:nth-child(3) a"
             },
             {
               "type": "wait",
@@ -170,18 +121,94 @@
           "assertions": [
             {
               "type": "url",
-              "value": "/customer/products",
-              "error_message": "Expected /customer/products"
+              "value": "/customer/cart",
+              "error_message": "Expected cart URL"
             },
             {
               "type": "visible",
-              "selector": ".customer-filter-form",
-              "error_message": "Category filter form not visible"
+              "selector": ".customer-hub",
+              "error_message": "Customer hub not visible"
             },
             {
               "type": "exists",
-              "selector": "select[name='category_id']",
-              "error_message": "Category filter select missing"
+              "selector": "h1.page-title",
+              "error_message": "Cart page title missing"
+            }
+          ]
+        },
+        {
+          "isMandatory": true,
+          "name": "Add product to cart from catalog",
+          "description": "Logs in as alice, opens Shop then All products, submits first Add to cart, then opens Cart and sees total row.",
+          "path": "/login",
+          "captureScreenshot": true,
+          "actions": [
+            {
+              "type": "fill",
+              "selector": "input[name='email']",
+              "value": "alice@example.com"
+            },
+            {
+              "type": "fill",
+              "selector": "input[name='password']",
+              "value": "user123"
+            },
+            {
+              "type": "click",
+              "selector": "button.btn-primary-fk[type='submit']"
+            },
+            {
+              "type": "wait",
+              "duration": 2500
+            },
+            {
+              "type": "click",
+              "selector": ".nav-links > li:nth-child(2) a"
+            },
+            {
+              "type": "wait",
+              "duration": 1500
+            },
+            {
+              "type": "click",
+              "selector": "a[href*='/customer/products']"
+            },
+            {
+              "type": "wait",
+              "duration": 2000
+            },
+            {
+              "type": "click",
+              "selector": "form.customer-product-card__cart-form button[type='submit']"
+            },
+            {
+              "type": "wait",
+              "duration": 2000
+            },
+            {
+              "type": "click",
+              "selector": ".nav-links > li:nth-child(3) a"
+            },
+            {
+              "type": "wait",
+              "duration": 2000
+            }
+          ],
+          "assertions": [
+            {
+              "type": "url",
+              "value": "/customer/cart",
+              "error_message": "Expected cart after add"
+            },
+            {
+              "type": "visible",
+              "selector": ".customer-cart-card",
+              "error_message": "Cart card with lines not visible"
+            },
+            {
+              "type": "exists",
+              "selector": "p.customer-cart__total",
+              "error_message": "Cart total line missing"
             }
           ]
         }
