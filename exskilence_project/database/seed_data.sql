@@ -7,6 +7,7 @@
 -- Task 11 (orders): sample orders below (users + products must exist).
 -- Task 12 (inventory): product quantities seeded below are used for stock validation and deduction.
 -- Task 13 (order workflow): users/products/cart seed data below supports end-to-end placement flow.
+-- Task 14 (order tracking): multiple order statuses are seeded for filter scenarios.
 
 SET NAMES utf8mb4;
 
@@ -250,5 +251,25 @@ WHERE u.email = 'alice@example.com'
   AND NOT EXISTS (
     SELECT 1 FROM orders o
     WHERE o.user_id = u.id AND o.total_amount = 349.00 AND o.status = 'Shipped'
+  )
+LIMIT 1;
+
+INSERT INTO orders (user_id, total_amount, status, created_at)
+SELECT u.id, 799.00, 'Delivered', '2026-01-26 08:00:00'
+FROM users u
+WHERE u.email = 'alice@example.com'
+  AND NOT EXISTS (
+    SELECT 1 FROM orders o
+    WHERE o.user_id = u.id AND o.total_amount = 799.00 AND o.status = 'Delivered'
+  )
+LIMIT 1;
+
+INSERT INTO orders (user_id, total_amount, status, created_at)
+SELECT u.id, 499.00, 'Cancelled', '2026-01-25 16:30:00'
+FROM users u
+WHERE u.email = 'bob@example.com'
+  AND NOT EXISTS (
+    SELECT 1 FROM orders o
+    WHERE o.user_id = u.id AND o.total_amount = 499.00 AND o.status = 'Cancelled'
   )
 LIMIT 1;

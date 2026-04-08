@@ -17,22 +17,21 @@
     </dl>
   </div>
 
-  {% if next_statuses %}
-    <div class="form-card">
-      <h2 class="customer-profile-card__title">Update status</h2>
-      <form method="post" action="">
-        <div class="form-group">
-          <label class="form-label-block" for="status">New status</label>
-          <select id="status" name="status" required>
-            {% for s in next_statuses %}
-              <option value="{{ s }}">{{ s }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <button type="submit" class="btn-primary-fk btn-inline">Save</button>
-      </form>
-    </div>
-  {% else %}
-    <p class="admin-welcome">No further status changes are allowed for this order.</p>
-  {% endif %}
+  <div class="form-card">
+    <h2 class="customer-profile-card__title">Update status</h2>
+    <form method="post" action="">
+      <div class="form-group">
+        <label class="form-label-block" for="status">New status</label>
+        <select id="status" name="status" required>
+          {% for s in all_statuses %}
+            <option value="{{ s }}" {% if default_status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn-primary-fk btn-inline">Save</button>
+    </form>
+    {% if not next_statuses %}
+      <p class="admin-welcome">No further valid transition from current status.</p>
+    {% endif %}
+  </div>
 {% endblock %}

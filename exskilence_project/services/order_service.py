@@ -10,6 +10,7 @@ from repositories.user_repository import UserRepository
 from services.cart_service import CartService
 from services.inventory_service import InventoryService
 from validators.order_validator import (
+    ALL_ORDER_STATUSES,
     assert_valid_status_transition,
     next_status_choices,
     parse_order_status_update,
@@ -56,6 +57,25 @@ class OrderService:
             items = self._orders.list_all_ordered()
         elif role == ROLE_CUSTOMER:
             items = self._orders.list_by_user_id(acting_user_id)
+        else:
+            items = []
+        return [o.to_dict() for o in items]
+
+    def list_dicts_for_role_filtered(
+        self,
+        role: str,
+        acting_user_id: int,
+        status: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        if status is None or not str(status).strip():
+            return self.list_dicts_for_role(role, acting_user_id)
+        status_value = str(status).strip()
+        if status_value not in ALL_ORDER_STATUSES:
+            raise ValidationException("Invalid status", details=["status"])
+        if role in (ROLE_ADMIN, ROLE_SELLER):
+            items = self._orders.list_all_by_status(status_value)
+        elif role == ROLE_CUSTOMER:
+            items = self._orders.list_by_user_id_and_status(acting_user_id, status_value)
         else:
             items = []
         return [o.to_dict() for o in items]

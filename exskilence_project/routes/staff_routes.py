@@ -7,6 +7,7 @@ from services.product_service import ProductService
 from services.store_service import StoreService
 from services.user_service import UserService
 from utils.form_errors import validation_exception_to_field_errors
+from validators.order_validator import ALL_ORDER_STATUSES
 
 staff_bp = Blueprint("staff", __name__, url_prefix="/staff")
 
@@ -29,8 +30,19 @@ def dashboard():
 @staff_bp.get("/orders")
 def order_list():
     uid = int(session["user_id"])
-    orders = OrderService().list_dicts_for_role("seller", uid)
-    return render_template("staff/order_list.html", orders=orders)
+    selected_status = request.args.get("status")
+    try:
+        orders = OrderService().list_dicts_for_role_filtered("seller", uid, selected_status)
+    except ValidationException as exc:
+        flash(getattr(exc, "message", str(exc)), "danger")
+        selected_status = None
+        orders = OrderService().list_dicts_for_role("seller", uid)
+    return render_template(
+        "staff/order_list.html",
+        orders=orders,
+        statuses=sorted(ALL_ORDER_STATUSES),
+        selected_status=selected_status,
+    )
 
 
 @staff_bp.route("/orders/<int:oid>", methods=["GET", "POST"])
@@ -50,10 +62,13 @@ def order_detail(oid):
     except NotFoundException:
         flash("Order not found.", "danger")
         return redirect(url_for("staff.order_list"))
+    default_status = next_statuses[0] if next_statuses else order["status"]
     return render_template(
         "staff/order_detail.html",
         order=order,
         next_statuses=next_statuses,
+        all_statuses=sorted(ALL_ORDER_STATUSES),
+        default_status=default_status,
     )
 
 

@@ -75,9 +75,27 @@ class OrderRepository:
         )
         return list(db.session.scalars(stmt).unique().all())
 
+    def list_by_user_id_and_status(self, user_id: int, status: str) -> List[Order]:
+        stmt = (
+            select(Order)
+            .where(Order.user_id == user_id, Order.status == status)
+            .options(selectinload(Order.user))
+            .order_by(Order.created_at.desc())
+        )
+        return list(db.session.scalars(stmt).unique().all())
+
     def list_all_ordered(self) -> List[Order]:
         stmt = (
             select(Order)
+            .options(selectinload(Order.user))
+            .order_by(Order.created_at.desc())
+        )
+        return list(db.session.scalars(stmt).unique().all())
+
+    def list_all_by_status(self, status: str) -> List[Order]:
+        stmt = (
+            select(Order)
+            .where(Order.status == status)
             .options(selectinload(Order.user))
             .order_by(Order.created_at.desc())
         )

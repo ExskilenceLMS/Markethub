@@ -8,6 +8,19 @@
     <h1 class="page-title">My orders</h1>
     <p class="customer-hub__intro">Orders you have placed.</p>
 
+    <div class="data-card customer-filter-card">
+      <form method="get" action="{{ url_for('customer.orders_list') }}" class="customer-filter-form">
+        <label class="form-label-block" for="status">Filter by status</label>
+        <select id="status" name="status" onchange="this.form.submit()">
+          <option value="">All statuses</option>
+          {% for s in statuses %}
+            <option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button type="submit" class="btn-primary-fk btn-inline">Apply</button></noscript>
+      </form>
+    </div>
+
     <div class="data-card">
       {% if orders %}
         <table class="data-table">

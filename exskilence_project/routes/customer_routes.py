@@ -7,6 +7,7 @@ from services.order_service import OrderService
 from services.order_workflow_service import OrderWorkflowService
 from services.product_service import ProductService
 from services.user_service import UserService
+from validators.order_validator import ALL_ORDER_STATUSES
 
 customer_bp = Blueprint("customer", __name__, url_prefix="/customer")
 
@@ -112,8 +113,19 @@ def cart_clear():
 @customer_bp.get("/orders")
 def orders_list():
     uid = int(session["user_id"])
-    orders = OrderService().list_dicts_for_role("customer", uid)
-    return render_template("customer/orders.html", orders=orders)
+    selected_status = request.args.get("status")
+    try:
+        orders = OrderService().list_dicts_for_role_filtered("customer", uid, selected_status)
+    except ValidationException as exc:
+        flash(getattr(exc, "message", str(exc)), "danger")
+        selected_status = None
+        orders = OrderService().list_dicts_for_role("customer", uid)
+    return render_template(
+        "customer/orders.html",
+        orders=orders,
+        statuses=sorted(ALL_ORDER_STATUSES),
+        selected_status=selected_status,
+    )
 
 
 @customer_bp.get("/orders/<int:oid>")
