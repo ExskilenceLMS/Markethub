@@ -4,6 +4,7 @@ from exceptions import AuthorizationException, NotFoundException, ValidationExce
 from services.cart_service import CartService
 from services.category_service import CategoryService
 from services.order_service import OrderService
+from services.order_workflow_service import OrderWorkflowService
 from services.product_service import ProductService
 from services.user_service import UserService
 
@@ -133,7 +134,7 @@ def order_detail(oid):
 def order_place():
     uid = int(session["user_id"])
     try:
-        OrderService().place_from_cart(uid)
+        OrderWorkflowService().place_order_from_cart(uid)
         flash("Order placed.", "success")
         return redirect(url_for("customer.orders_list"))
     except ValidationException as exc:

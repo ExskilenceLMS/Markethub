@@ -6,6 +6,7 @@
 -- Task 10 (cart): sample cart lines for alice@example.com after products are inserted.
 -- Task 11 (orders): sample orders below (users + products must exist).
 -- Task 12 (inventory): product quantities seeded below are used for stock validation and deduction.
+-- Task 13 (order workflow): users/products/cart seed data below supports end-to-end placement flow.
 
 SET NAMES utf8mb4;
 
@@ -216,6 +217,16 @@ SELECT u.id, p.id, 1, '2026-01-26 10:05:00'
 FROM users u
 INNER JOIN products p ON p.name = 'Seed Python Basics Guide'
 WHERE u.email = 'alice@example.com'
+  AND NOT EXISTS (
+    SELECT 1 FROM cart_items c WHERE c.user_id = u.id AND c.product_id = p.id
+  )
+LIMIT 1;
+
+INSERT INTO cart_items (user_id, product_id, quantity, created_at)
+SELECT u.id, p.id, 1, '2026-01-26 10:10:00'
+FROM users u
+INNER JOIN products p ON p.name = 'Seed Yoga Mat 6mm'
+WHERE u.email = 'bob@example.com'
   AND NOT EXISTS (
     SELECT 1 FROM cart_items c WHERE c.user_id = u.id AND c.product_id = p.id
   )

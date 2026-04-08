@@ -1,8 +1,10 @@
+from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
 from exceptions import AuthorizationException, NotFoundException, ValidationException
 from models.user import ROLE_ADMIN, ROLE_CUSTOMER, ROLE_SELLER
 from repositories.cart_repository import CartRepository
+from models.cart_item import CartItem
 from repositories.order_repository import OrderRepository
 from repositories.user_repository import UserRepository
 from services.cart_service import CartService
@@ -30,12 +32,23 @@ class OrderService:
         self._inventory = inventory_service or InventoryService()
 
     def place_from_cart(self, user_id: int) -> Dict[str, Any]:
-        if self._users.get_by_id(user_id) is None:
-            raise ValidationException("User does not exist", details=["_form"])
+        self.ensure_user_exists(user_id)
         _, total = self._cart_service.get_cart_summary(user_id)
         rows = self._cart.list_by_user_id(user_id)
         self._inventory.ensure_cart_items_have_stock(rows)
-        order = self._orders.create_from_cart_lines(user_id, total, rows)
+        return self.create_order_from_validated_cart(user_id, total, rows)
+
+    def ensure_user_exists(self, user_id: int) -> None:
+        if self._users.get_by_id(user_id) is None:
+            raise ValidationException("User does not exist", details=["_form"])
+
+    def create_order_from_validated_cart(
+        self,
+        user_id: int,
+        total_amount: Decimal,
+        rows: List[CartItem],
+    ) -> Dict[str, Any]:
+        order = self._orders.create_from_cart_lines(user_id, total_amount, rows)
         return order.to_dict()
 
     def list_dicts_for_role(self, role: str, acting_user_id: int) -> List[Dict[str, Any]]:
