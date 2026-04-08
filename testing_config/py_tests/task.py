@@ -49,16 +49,16 @@ def _seed_user(role, name, password="pass123!", email=None):
     return user.id, user.email, password
 
 
-def _seed_product(name="WorkflowItem", price="30.00", quantity=8):
+def _seed_product(name="TrackItem", price="22.00", quantity=10):
     from repositories.category_repository import CategoryRepository
     from repositories.product_repository import ProductRepository
 
-    seller_id, _, _ = _seed_user("seller", "Workflow Seller", password="sellerPass1")
+    seller_id, _, _ = _seed_user("seller", "Track Seller", password="sellerPass1")
     suffix = uuid.uuid4().hex[:8]
-    cat = CategoryRepository().create(f"WorkflowCat_{suffix}", "Workflow tests")
+    cat = CategoryRepository().create(f"TrackCat_{suffix}", "Order tracking tests")
     product = ProductRepository().create(
         name,
-        "Order workflow test product",
+        "Tracking product",
         Decimal(price),
         quantity,
         cat.id,
@@ -68,117 +68,117 @@ def _seed_product(name="WorkflowItem", price="30.00", quantity=8):
     return product.id
 
 
-def test_guest_order_place_redirects_to_login(client):
-    """Guest posting place-order is redirected to login."""
+def _create_order_for_customer(client, qty=2):
+    customer_id, customer_email, pwd = _seed_user("customer", "Track Customer", password="custPass1")
+    product_id = _seed_product(quantity=9)
+    _login_web(client, customer_email, pwd)
+    client.post("/customer/cart/add", data={"product_id": product_id, "quantity": qty})
+    client.post("/customer/orders/place", follow_redirects=False)
+    return customer_id, customer_email, pwd
+
+
+def test_guest_orders_list_redirects_to_login(client):
+    """Guest should not access customer order tracking list."""
     try:
-        response = client.post("/customer/orders/place", follow_redirects=False)
+        response = client.get("/customer/orders", follow_redirects=False)
         assert response.status_code == 302
         assert "login" in response.headers.get("Location", "").lower()
     except Exception as error:
-        pytest.fail(f"Guest order place guard check failed: {error}")
+        pytest.fail(f"Guest order tracking guard check failed: {error}")
 
 
-def test_order_workflow_places_order_and_redirects(client):
-    """Cart to order workflow redirects to /customer/orders and creates order."""
+def test_customer_orders_list_shows_tracking_columns(client):
+    """Order tracking list should show order id, status, and details link."""
     try:
-        customer_id, customer_email, pwd = _seed_user("customer", "Workflow Customer", password="custPass1")
-        product_id = _seed_product(quantity=9)
+        _, customer_email, pwd = _create_order_for_customer(client, qty=1)
         _login_web(client, customer_email, pwd)
-
-        client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 3})
-        response = client.post("/customer/orders/place", follow_redirects=False)
-
-        assert response.status_code == 302
-        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/customer/orders"
-
-        from repositories.order_repository import OrderRepository
-
-        with app.app_context():
-            orders = OrderRepository().list_by_user_id(customer_id)
-            assert len(orders) == 1
-            assert orders[0].status == "Placed"
-    except Exception as error:
-        pytest.fail(f"Order placement workflow redirect check failed: {error}")
-
-
-def test_order_workflow_deducts_stock_and_clears_cart(client):
-    """Successful workflow deducts stock and clears all cart lines."""
-    try:
-        customer_id, customer_email, pwd = _seed_user("customer", "Workflow Customer2", password="custPass2")
-        product_id = _seed_product(name="WItem2", quantity=7)
-        _login_web(client, customer_email, pwd)
-
-        client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 4})
-        client.post("/customer/orders/place", follow_redirects=False)
-
-        from repositories.cart_repository import CartRepository
-        from repositories.product_repository import ProductRepository
-
-        with app.app_context():
-            refreshed = ProductRepository().get_by_id(product_id)
-            assert refreshed is not None
-            assert refreshed.quantity == 3
-            assert CartRepository().list_by_user_id(customer_id) == []
-    except Exception as error:
-        pytest.fail(f"Workflow stock deduction and cart clear check failed: {error}")
-
-
-def test_order_workflow_prevents_oversell_and_keeps_cart(client):
-    """If requested qty exceeds stock, workflow must not create order and cart remains."""
-    try:
-        customer_id, customer_email, pwd = _seed_user("customer", "Workflow Customer3", password="custPass3")
-        product_id = _seed_product(name="WItem3", quantity=2)
-        _login_web(client, customer_email, pwd)
-
-        client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 5})
-        response = client.post("/customer/orders/place", follow_redirects=False)
-
-        assert response.status_code == 302
-        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/customer/cart"
-
-        from repositories.cart_repository import CartRepository
-        from repositories.order_repository import OrderRepository
-
-        with app.app_context():
-            assert len(OrderRepository().list_by_user_id(customer_id)) == 0
-            assert len(CartRepository().list_by_user_id(customer_id)) == 1
-    except Exception as error:
-        pytest.fail(f"Workflow oversell prevention check failed: {error}")
-
-
-def test_order_workflow_blocks_empty_cart(client):
-    """Empty cart placement redirects back to cart and creates no order."""
-    try:
-        customer_id, customer_email, pwd = _seed_user("customer", "Workflow EmptyCart", password="custPass4")
-        _login_web(client, customer_email, pwd)
-        response = client.post("/customer/orders/place", follow_redirects=False)
-
-        assert response.status_code == 302
-        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/customer/cart"
-
-        from repositories.order_repository import OrderRepository
-
-        with app.app_context():
-            assert OrderRepository().list_by_user_id(customer_id) == []
-    except Exception as error:
-        pytest.fail(f"Workflow empty-cart guard check failed: {error}")
-
-
-def test_customer_orders_list_shows_placed_order_after_workflow(client):
-    """After workflow success, /customer/orders renders order id and status."""
-    try:
-        _, customer_email, pwd = _seed_user("customer", "Workflow OrdersList", password="custPass5")
-        product_id = _seed_product(name="WItem4", quantity=6)
-        _login_web(client, customer_email, pwd)
-
-        client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 2})
-        client.post("/customer/orders/place", follow_redirects=False)
         response = client.get("/customer/orders")
-
         assert response.status_code == 200
         html = response.get_data(as_text=True)
         assert "My orders" in html
+        assert "Status" in html
+        assert "Details" in html
         assert "Placed" in html
-        assert "#" in html
     except Exception as error:
-        pytest.fail(f"Orders list post-workflow check failed: {error}")
+        pytest.fail(f"Customer tracking list columns check failed: {error}")
+
+
+def test_customer_orders_status_filter_works(client):
+    """Status query filter should keep matching orders in customer list."""
+    try:
+        _, customer_email, pwd = _create_order_for_customer(client, qty=2)
+        _login_web(client, customer_email, pwd)
+        response = client.get("/customer/orders?status=Placed")
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert "Filter by status" in html
+        assert "Placed" in html
+    except Exception as error:
+        pytest.fail(f"Customer status filter check failed: {error}")
+
+
+def test_customer_order_detail_displays_status_and_total(client):
+    """Customer order detail should show total, status, and placed timestamp."""
+    try:
+        customer_id, customer_email, pwd = _create_order_for_customer(client, qty=3)
+        from repositories.order_repository import OrderRepository
+
+        with app.app_context():
+            order = OrderRepository().list_by_user_id(customer_id)[0]
+            oid = order.id
+
+        _login_web(client, customer_email, pwd)
+        response = client.get(f"/customer/orders/{oid}")
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert f"Order #{oid}" in html
+        assert "Status" in html
+        assert "Placed" in html
+        assert "Total" in html
+    except Exception as error:
+        pytest.fail(f"Customer order detail tracking check failed: {error}")
+
+
+def test_customer_cannot_track_other_customers_order(client):
+    """Customer must not access another customer's order detail page."""
+    try:
+        owner_id, _, _ = _create_order_for_customer(client, qty=1)
+        from repositories.order_repository import OrderRepository
+
+        with app.app_context():
+            oid = OrderRepository().list_by_user_id(owner_id)[0].id
+
+        _, other_email, other_pwd = _seed_user("customer", "Other Track Customer", password="custPass2")
+        _login_web(client, other_email, other_pwd)
+
+        response = client.get(f"/customer/orders/{oid}", follow_redirects=False)
+        assert response.status_code == 302
+        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/customer/orders"
+    except Exception as error:
+        pytest.fail(f"Cross-customer tracking access check failed: {error}")
+
+
+def test_admin_and_staff_order_lists_support_status_filter(client):
+    """Admin and staff tracking lists should render status filter controls and rows."""
+    try:
+        _create_order_for_customer(client, qty=2)
+
+        _, admin_email, admin_pwd = _seed_user("admin", "Track Admin", password="adminPass1")
+        _login_web(client, admin_email, admin_pwd)
+        admin_response = client.get("/admin/orders?status=Placed")
+        assert admin_response.status_code == 200
+        admin_html = admin_response.get_data(as_text=True)
+        assert "Orders" in admin_html
+        assert "Filter by status" in admin_html
+        assert "Placed" in admin_html
+
+        _, seller_email, seller_pwd = _seed_user("seller", "Track Staff", password="sellerPass2")
+        _login_web(client, seller_email, seller_pwd)
+        staff_response = client.get("/staff/orders?status=Placed")
+        assert staff_response.status_code == 200
+        staff_html = staff_response.get_data(as_text=True)
+        assert "Orders" in staff_html
+        assert "Filter by status" in staff_html
+        assert "Placed" in staff_html
+    except Exception as error:
+        pytest.fail(f"Admin/staff tracking filter check failed: {error}")

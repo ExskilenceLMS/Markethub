@@ -8,22 +8,22 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "templates/customer/cart.html",
-            "title": "Order placement action from cart",
-            "description": "Cart page must expose place-order workflow controls with totals and line forms.",
+            "file": "templates/customer/orders.html",
+            "title": "Customer order tracking page",
+            "description": "Tracking list should provide status filter, orders table, and details links.",
             "points": 10,
-            "requiredElements": ["table", "form", "button", "input", "p"],
-            "requiredIdentifiers": ["customer-cart-card", "customer-cart__total", "customer-cart__place-row", "customer-cart__qty-form"],
+            "requiredElements": ["h1", "form", "select", "table", "th", "td", "a"],
+            "requiredIdentifiers": ["customer-hub", "customer-filter-form", "data-table"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           },
           {
-            "file": "templates/customer/orders.html",
-            "title": "Placed order listing view",
-            "description": "Orders list must show table structure with order id, total, status, and details link.",
+            "file": "templates/customer/order_detail.html",
+            "title": "Customer order detail tracking view",
+            "description": "Order detail should show status, total, and placed timestamp fields.",
             "points": 8,
-            "requiredElements": ["h1", "table", "th", "td", "a"],
-            "requiredIdentifiers": ["customer-hub", "data-card", "data-table"],
+            "requiredElements": ["h1", "dl", "dt", "dd", "a"],
+            "requiredIdentifiers": ["customer-hub", "customer-profile-dl", "page-title"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           }
@@ -34,10 +34,10 @@
         "rules": [
           {
             "file": "static/css/style.css",
-            "title": "Workflow UI selectors",
-            "description": "Styles should include cart place-order row, totals, and product quantity controls.",
+            "title": "Tracking UI selectors",
+            "description": "Styles should include filter form, badges, profile list, and data table for tracking screens.",
             "points": 10,
-            "requiredSelectors": [".customer-cart__place-row", ".customer-cart__total", ".customer-cart__qty-input", ".customer-product-card__qty"],
+            "requiredSelectors": [".customer-filter-form", ".data-table", ".badge--ok", ".customer-profile-dl"],
             "error_message": "{requiredSelectors} not found"
           }
         ]
@@ -50,28 +50,28 @@
       "timeout": 60000,
       "points": 48,
       "runTests": {
-        "test_guest_order_place_redirects_to_login": "Guest Place-Order Guard",
-        "test_order_workflow_places_order_and_redirects": "Workflow Redirect and Order Create",
-        "test_order_workflow_deducts_stock_and_clears_cart": "Workflow Stock Deduction and Cart Clear",
-        "test_order_workflow_prevents_oversell_and_keeps_cart": "Workflow Oversell Prevention",
-        "test_order_workflow_blocks_empty_cart": "Workflow Empty Cart Guard",
-        "test_customer_orders_list_shows_placed_order_after_workflow": "Orders List After Workflow"
+        "test_guest_orders_list_redirects_to_login": "Guest Order Tracking Guard",
+        "test_customer_orders_list_shows_tracking_columns": "Customer Tracking List Columns",
+        "test_customer_orders_status_filter_works": "Customer Status Filter",
+        "test_customer_order_detail_displays_status_and_total": "Customer Order Detail Tracking",
+        "test_customer_cannot_track_other_customers_order": "Customer Order Access Control",
+        "test_admin_and_staff_order_lists_support_status_filter": "Admin and Staff Tracking Filters"
       },
       "descriptions": {
-        "test_guest_order_place_redirects_to_login": "Verifies unauthenticated users posting to place-order are redirected to login.",
-        "test_order_workflow_places_order_and_redirects": "Verifies cart-to-order workflow redirects to /customer/orders and persists a Placed order.",
-        "test_order_workflow_deducts_stock_and_clears_cart": "Verifies successful placement deducts inventory and clears cart rows.",
-        "test_order_workflow_prevents_oversell_and_keeps_cart": "Verifies workflow blocks overselling and preserves cart when stock is insufficient.",
-        "test_order_workflow_blocks_empty_cart": "Verifies empty cart cannot be placed and user is redirected back to cart.",
-        "test_customer_orders_list_shows_placed_order_after_workflow": "Verifies orders list displays placed order status after successful workflow."
+        "test_guest_orders_list_redirects_to_login": "Verifies guests cannot access /customer/orders.",
+        "test_customer_orders_list_shows_tracking_columns": "Verifies customer order history page renders status and details columns.",
+        "test_customer_orders_status_filter_works": "Verifies customer tracking list accepts status query filter.",
+        "test_customer_order_detail_displays_status_and_total": "Verifies customer order detail page shows status, total, and placed info.",
+        "test_customer_cannot_track_other_customers_order": "Verifies customers cannot open another customer's order detail.",
+        "test_admin_and_staff_order_lists_support_status_filter": "Verifies admin/staff order tracking pages support status filter display."
       },
       "error_messages": {
-        "test_guest_order_place_redirects_to_login": "Guests must not place orders.",
-        "test_order_workflow_places_order_and_redirects": "Order workflow must create an order and redirect to orders list.",
-        "test_order_workflow_deducts_stock_and_clears_cart": "Workflow must deduct stock and clear cart after placement.",
-        "test_order_workflow_prevents_oversell_and_keeps_cart": "Workflow must prevent overselling and keep cart unchanged on failure.",
-        "test_order_workflow_blocks_empty_cart": "Workflow must reject empty-cart order placement.",
-        "test_customer_orders_list_shows_placed_order_after_workflow": "Placed order should appear on customer orders page."
+        "test_guest_orders_list_redirects_to_login": "Guests must be redirected from customer order tracking.",
+        "test_customer_orders_list_shows_tracking_columns": "Customer order history must include tracking fields.",
+        "test_customer_orders_status_filter_works": "Customer order tracking filter should work.",
+        "test_customer_order_detail_displays_status_and_total": "Order detail tracking fields are missing.",
+        "test_customer_cannot_track_other_customers_order": "Customers must not track another user's order.",
+        "test_admin_and_staff_order_lists_support_status_filter": "Admin/staff tracking screens must support status filter."
       }
     },
     "dynamic": {
@@ -86,8 +86,8 @@
       "tests": [
         {
           "isMandatory": true,
-          "name": "Customer cart shows place-order controls",
-          "description": "Login as seeded customer and verify cart page has total and place-order button structure.",
+          "name": "Customer opens order tracking list",
+          "description": "Login as seeded customer and verify order list with filter controls.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
@@ -95,20 +95,20 @@
             { "type": "fill", "selector": "input[name='password']", "value": "user123" },
             { "type": "click", "selector": "button.btn-primary-fk[type='submit']" },
             { "type": "wait", "duration": 2500 },
-            { "type": "click", "selector": "a[href='/customer/cart']" },
-            { "type": "wait", "duration": 1500 }
+            { "type": "click", "selector": "a[href='/customer/orders']" },
+            { "type": "wait", "duration": 1800 }
           ],
           "assertions": [
-            { "type": "url", "value": "/customer/cart", "error_message": "Expected /customer/cart" },
-            { "type": "visible", "selector": ".customer-hub", "error_message": "Cart container not visible" },
-            { "type": "exists", "selector": "p.customer-cart__total", "error_message": "Cart total row missing" },
-            { "type": "exists", "selector": "form.customer-cart__place-row button[type='submit']", "error_message": "Place-order action missing" }
+            { "type": "url", "value": "/customer/orders", "error_message": "Expected /customer/orders" },
+            { "type": "visible", "selector": ".customer-hub", "error_message": "Order tracking container missing" },
+            { "type": "exists", "selector": "form.customer-filter-form", "error_message": "Status filter form missing" },
+            { "type": "exists", "selector": "table.data-table", "error_message": "Order tracking table missing" }
           ]
         },
         {
           "isMandatory": true,
-          "name": "Customer completes cart to order workflow",
-          "description": "Add one product from catalog to cart, place order, and verify redirect to orders list.",
+          "name": "Customer opens order detail from tracking list",
+          "description": "From orders list, open details link and verify detail page has status and totals.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
@@ -116,19 +116,15 @@
             { "type": "fill", "selector": "input[name='password']", "value": "user123" },
             { "type": "click", "selector": "button.btn-primary-fk[type='submit']" },
             { "type": "wait", "duration": 2500 },
-            { "type": "click", "selector": "a[href='/customer/products']" },
+            { "type": "click", "selector": "a[href='/customer/orders']" },
             { "type": "wait", "duration": 1500 },
-            { "type": "click", "selector": "form.customer-product-card__cart-form button[type='submit']" },
-            { "type": "wait", "duration": 1200 },
-            { "type": "click", "selector": "a[href='/customer/cart']" },
-            { "type": "wait", "duration": 1200 },
-            { "type": "click", "selector": "form.customer-cart__place-row button[type='submit']" },
-            { "type": "wait", "duration": 2200 }
+            { "type": "click", "selector": "a[href*='/customer/orders/']" },
+            { "type": "wait", "duration": 1800 }
           ],
           "assertions": [
-            { "type": "url", "value": "/customer/orders", "error_message": "Expected redirect to /customer/orders" },
-            { "type": "visible", "selector": ".customer-hub", "error_message": "Orders page container missing" },
-            { "type": "exists", "selector": "table.data-table", "error_message": "Orders table missing" }
+            { "type": "url", "value": "/customer/orders/", "error_message": "Expected order detail URL" },
+            { "type": "visible", "selector": ".customer-profile-dl", "error_message": "Order detail summary missing" },
+            { "type": "exists", "selector": "h1.page-title", "error_message": "Order detail title missing" }
           ]
         }
       ]
