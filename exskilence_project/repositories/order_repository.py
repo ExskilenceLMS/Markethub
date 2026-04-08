@@ -4,6 +4,7 @@ from typing import List, Optional
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from exceptions import ValidationException
 from models import db
 from models.cart_item import CartItem
 from models.order import Order
@@ -30,7 +31,8 @@ class OrderRepository:
     ) -> Order:
         """
         Single transaction: insert order, decrement product stock for each line,
-        remove cart lines. Caller must validate stock and non-empty cart.
+        remove cart lines. Includes defensive stock checks to avoid overselling
+        if inventory changes between validation and commit.
         """
         if not lines:
             raise ValueError("lines must not be empty")
@@ -41,7 +43,12 @@ class OrderRepository:
             for line in lines:
                 prod = line.product
                 if prod is None:
-                    raise ValueError("Cart line missing product")
+                    raise ValidationException("Product does not exist", details=["_form"])
+                if line.quantity > prod.quantity:
+                    raise ValidationException(
+                        f"Insufficient stock for {prod.name}",
+                        details=["_form"],
+                    )
                 prod.quantity = prod.quantity - line.quantity
             for line in lines:
                 db.session.delete(line)

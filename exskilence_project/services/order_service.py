@@ -1,4 +1,3 @@
-from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
 from exceptions import AuthorizationException, NotFoundException, ValidationException
@@ -7,6 +6,7 @@ from repositories.cart_repository import CartRepository
 from repositories.order_repository import OrderRepository
 from repositories.user_repository import UserRepository
 from services.cart_service import CartService
+from services.inventory_service import InventoryService
 from validators.order_validator import (
     assert_valid_status_transition,
     next_status_choices,
@@ -21,28 +21,20 @@ class OrderService:
         cart_repository: Optional[CartRepository] = None,
         user_repository: Optional[UserRepository] = None,
         cart_service: Optional[CartService] = None,
+        inventory_service: Optional[InventoryService] = None,
     ):
         self._orders = order_repository or OrderRepository()
         self._cart = cart_repository or CartRepository()
         self._users = user_repository or UserRepository()
         self._cart_service = cart_service or CartService()
+        self._inventory = inventory_service or InventoryService()
 
     def place_from_cart(self, user_id: int) -> Dict[str, Any]:
         if self._users.get_by_id(user_id) is None:
             raise ValidationException("User does not exist", details=["_form"])
         _, total = self._cart_service.get_cart_summary(user_id)
         rows = self._cart.list_by_user_id(user_id)
-        if not rows:
-            raise ValidationException("Cart is empty", details=["_form"])
-        for row in rows:
-            p = row.product
-            if p is None:
-                raise ValidationException("Invalid cart contents", details=["_form"])
-            if p.quantity < row.quantity:
-                raise ValidationException(
-                    f"Insufficient stock for {p.name}",
-                    details=["_form"],
-                )
+        self._inventory.ensure_cart_items_have_stock(rows)
         order = self._orders.create_from_cart_lines(user_id, total, rows)
         return order.to_dict()
 

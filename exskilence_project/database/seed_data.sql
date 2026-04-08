@@ -5,6 +5,7 @@
 -- Task 9 (customer dashboard): categories below + sample products later in this file support read-only browse.
 -- Task 10 (cart): sample cart lines for alice@example.com after products are inserted.
 -- Task 11 (orders): sample orders below (users + products must exist).
+-- Task 12 (inventory): product quantities seeded below are used for stock validation and deduction.
 
 SET NAMES utf8mb4;
 
