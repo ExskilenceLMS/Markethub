@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}My orders — MarketHub{% endblock %}
+
+{% block content %}
+  <div class="customer-hub">
+    <p class="customer-hub__back"><a href="{{ url_for('customer.dashboard') }}">← My account</a></p>
+    <h1 class="page-title">My orders</h1>
+    <p class="customer-hub__intro">Orders you have placed.</p>
+
+    <div class="data-card">
+      {% if orders %}
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order</th>
+              <th>Total</th>
+              <th>Status</th>
+              <th>Placed</th>
+              <th class="data-table__actions"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for o in orders %}
+              <tr>
+                <td><strong>#{{ o.id }}</strong></td>
+                <td>₹{{ '%.2f'|format(o.total_amount|float) }}</td>
+                <td>{{ o.status }}</td>
+                <td class="data-table__muted">{{ o.created_at[:19] if o.created_at else '—' }}</td>
+                <td class="data-table__actions">
+                  <a href="{{ url_for('customer.order_detail', oid=o.id) }}">Details</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="admin-welcome">You have no orders yet.</p>
+        <p><a class="btn-primary-fk btn-inline" href="{{ url_for('customer.products') }}">Browse products</a></p>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

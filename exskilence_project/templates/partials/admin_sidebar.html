@@ -12,6 +12,8 @@
        class="admin-sidebar__link {% if request.endpoint in ('admin.store_list', 'admin.store_new', 'admin.store_edit') %}is-active{% endif %}">Stores</a>
     <a href="{{ url_for('admin.product_list') }}"
        class="admin-sidebar__link {% if request.endpoint in ('admin.product_list', 'admin.product_new', 'admin.product_edit') %}is-active{% endif %}">Products</a>
+    <a href="{{ url_for('admin.order_list') }}"
+       class="admin-sidebar__link {% if request.endpoint in ('admin.order_list', 'admin.order_detail') %}is-active{% endif %}">Orders</a>
     <a href="{{ url_for('admin.staff_management') }}"
        class="admin-sidebar__link {% if request.endpoint == 'admin.staff_management' %}is-active{% endif %}">Staff management</a>
   </nav>

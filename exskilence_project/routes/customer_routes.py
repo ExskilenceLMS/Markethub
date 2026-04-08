@@ -3,6 +3,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from exceptions import AuthorizationException, NotFoundException, ValidationException
 from services.cart_service import CartService
 from services.category_service import CategoryService
+from services.order_service import OrderService
 from services.product_service import ProductService
 from services.user_service import UserService
 
@@ -105,3 +106,36 @@ def cart_clear():
     CartService().clear(uid)
     flash("Cart cleared.", "success")
     return redirect(url_for("customer.cart"))
+
+
+@customer_bp.get("/orders")
+def orders_list():
+    uid = int(session["user_id"])
+    orders = OrderService().list_dicts_for_role("customer", uid)
+    return render_template("customer/orders.html", orders=orders)
+
+
+@customer_bp.get("/orders/<int:oid>")
+def order_detail(oid):
+    uid = int(session["user_id"])
+    try:
+        order = OrderService().get_dict(oid, uid, "customer")
+    except NotFoundException:
+        flash("Order not found.", "danger")
+        return redirect(url_for("customer.orders_list"))
+    except AuthorizationException as exc:
+        flash(exc.message, "danger")
+        return redirect(url_for("customer.orders_list"))
+    return render_template("customer/order_detail.html", order=order)
+
+
+@customer_bp.post("/orders/place")
+def order_place():
+    uid = int(session["user_id"])
+    try:
+        OrderService().place_from_cart(uid)
+        flash("Order placed.", "success")
+        return redirect(url_for("customer.orders_list"))
+    except ValidationException as exc:
+        flash(getattr(exc, "message", str(exc)), "danger")
+        return redirect(url_for("customer.cart"))

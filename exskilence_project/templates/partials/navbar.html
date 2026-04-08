@@ -13,6 +13,7 @@
         {% if session.get('role') == 'customer' %}
           <li><a href="{{ url_for('customer.dashboard') }}">Shop</a></li>
           <li><a href="{{ url_for('customer.cart') }}">Cart</a></li>
+          <li><a href="{{ url_for('customer.orders_list') }}">Orders</a></li>
         {% endif %}
         <li><a href="{{ url_for('web.logout') }}">Log out</a></li>
       {% else %}

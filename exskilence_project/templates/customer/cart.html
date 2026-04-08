@@ -53,6 +53,9 @@
           </tbody>
         </table>
         <p class="customer-cart__total"><strong>Total:</strong> ₹{{ "%.2f"|format(total_amount|float) }}</p>
+        <form method="post" action="{{ url_for('customer.order_place') }}" class="customer-cart__place-row">
+          <button type="submit" class="btn-primary-fk btn-inline">Place order</button>
+        </form>
       </div>
     {% else %}
       <div class="data-card">

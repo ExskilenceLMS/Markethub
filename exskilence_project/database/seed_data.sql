@@ -4,6 +4,7 @@
 -- Categories / stores use seller@example.com as owner (must exist from user seed).
 -- Task 9 (customer dashboard): categories below + sample products later in this file support read-only browse.
 -- Task 10 (cart): sample cart lines for alice@example.com after products are inserted.
+-- Task 11 (orders): sample orders below (users + products must exist).
 
 SET NAMES utf8mb4;
 
@@ -216,5 +217,26 @@ INNER JOIN products p ON p.name = 'Seed Python Basics Guide'
 WHERE u.email = 'alice@example.com'
   AND NOT EXISTS (
     SELECT 1 FROM cart_items c WHERE c.user_id = u.id AND c.product_id = p.id
+  )
+LIMIT 1;
+
+-- Sample orders (historical; independent of current cart)
+INSERT INTO orders (user_id, total_amount, status, created_at)
+SELECT u.id, 1047.00, 'Placed', '2026-01-28 14:00:00'
+FROM users u
+WHERE u.email = 'bob@example.com'
+  AND NOT EXISTS (
+    SELECT 1 FROM orders o
+    WHERE o.user_id = u.id AND o.total_amount = 1047.00 AND o.status = 'Placed'
+  )
+LIMIT 1;
+
+INSERT INTO orders (user_id, total_amount, status, created_at)
+SELECT u.id, 349.00, 'Shipped', '2026-01-27 09:00:00'
+FROM users u
+WHERE u.email = 'alice@example.com'
+  AND NOT EXISTS (
+    SELECT 1 FROM orders o
+    WHERE o.user_id = u.id AND o.total_amount = 349.00 AND o.status = 'Shipped'
   )
 LIMIT 1;

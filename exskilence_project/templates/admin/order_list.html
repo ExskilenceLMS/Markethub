@@ -1,0 +1,46 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Orders — Admin{% endblock %}
+
+{% block admin_content %}
+  <header class="admin-page-header">
+    <h1 class="page-title">Orders</h1>
+    <p class="admin-welcome">All customer orders. Open a row to update status.</p>
+  </header>
+
+  <div class="data-card">
+    {% if orders %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Customer</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th>Placed</th>
+            <th class="data-table__actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in orders %}
+            <tr>
+              <td>#{{ o.id }}</td>
+              <td>
+                <strong>{{ o.customer_name }}</strong>
+                <span class="data-table__muted"><br>{{ o.customer_email }}</span>
+              </td>
+              <td>₹{{ '%.2f'|format(o.total_amount|float) }}</td>
+              <td><span class="badge badge--ok">{{ o.status }}</span></td>
+              <td class="data-table__muted">{{ o.created_at[:19] if o.created_at else '—' }}</td>
+              <td class="data-table__actions">
+                <a href="{{ url_for('admin.order_detail', oid=o.id) }}">View</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="admin-welcome">No orders yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}

@@ -3,6 +3,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from exceptions import AuthorizationException, NotFoundException, ValidationException
 from services.admin_service import AdminService
 from services.category_service import CategoryService
+from services.order_service import OrderService
 from services.product_service import ProductService
 from services.store_service import StoreService
 from services.user_service import UserService
@@ -288,6 +289,40 @@ def product_delete(pid):
     except AuthorizationException as exc:
         flash(exc.message, "danger")
     return redirect(url_for("admin.product_list"))
+
+
+# —— Orders ——
+
+
+@admin_bp.get("/orders")
+def order_list():
+    uid = int(session["user_id"])
+    orders = OrderService().list_dicts_for_role("admin", uid)
+    return render_template("admin/order_list.html", orders=orders)
+
+
+@admin_bp.route("/orders/<int:oid>", methods=["GET", "POST"])
+def order_detail(oid):
+    uid = int(session["user_id"])
+    if request.method == "POST":
+        try:
+            OrderService().update_status(oid, request.form.to_dict(), "admin")
+            flash("Order status updated.", "success")
+        except ValidationException as exc:
+            flash(getattr(exc, "message", str(exc)), "danger")
+        except NotFoundException:
+            flash("Order not found.", "danger")
+        return redirect(url_for("admin.order_detail", oid=oid))
+    try:
+        order, next_statuses = OrderService().get_dict_with_next_statuses(oid, uid, "admin")
+    except NotFoundException:
+        flash("Order not found.", "danger")
+        return redirect(url_for("admin.order_list"))
+    return render_template(
+        "admin/order_detail.html",
+        order=order,
+        next_statuses=next_statuses,
+    )
 
 
 # —— Staff / assignments overview ——

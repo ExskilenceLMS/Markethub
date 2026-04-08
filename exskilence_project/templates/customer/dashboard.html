@@ -17,6 +17,10 @@
     </div>
 
     <nav class="customer-hub__nav" aria-label="Shop">
+      <a class="staff-hub__card" href="{{ url_for('customer.orders_list') }}">
+        <strong>My orders</strong>
+        <span>Order history and status</span>
+      </a>
       <a class="staff-hub__card" href="{{ url_for('customer.cart') }}">
         <strong>Cart</strong>
         <span>View and edit your cart</span>

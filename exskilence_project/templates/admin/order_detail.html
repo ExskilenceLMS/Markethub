@@ -1,0 +1,38 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Order #{{ order.id }} — Admin{% endblock %}
+
+{% block admin_content %}
+  <header class="admin-page-header">
+    <p class="admin-welcome"><a href="{{ url_for('admin.order_list') }}">← All orders</a></p>
+    <h1 class="page-title">Order #{{ order.id }}</h1>
+  </header>
+
+  <div class="data-card">
+    <dl class="customer-profile-dl">
+      <div><dt>Customer</dt><dd>{{ order.customer_name }} ({{ order.customer_email }})</dd></div>
+      <div><dt>Total</dt><dd>₹{{ '%.2f'|format(order.total_amount|float) }}</dd></div>
+      <div><dt>Status</dt><dd><span class="badge badge--ok">{{ order.status }}</span></dd></div>
+      <div><dt>Placed</dt><dd>{{ order.created_at[:19] if order.created_at else '—' }}</dd></div>
+    </dl>
+  </div>
+
+  {% if next_statuses %}
+    <div class="form-card">
+      <h2 class="customer-profile-card__title">Update status</h2>
+      <form method="post" action="">
+        <div class="form-group">
+          <label class="form-label-block" for="status">New status</label>
+          <select id="status" name="status" required>
+            {% for s in next_statuses %}
+              <option value="{{ s }}">{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" class="btn-primary-fk btn-inline">Save</button>
+      </form>
+    </div>
+  {% else %}
+    <p class="admin-welcome">No further status changes are allowed for this order.</p>
+  {% endif %}
+{% endblock %}

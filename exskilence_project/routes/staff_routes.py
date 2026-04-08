@@ -2,6 +2,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 
 from exceptions import AuthorizationException, NotFoundException, ValidationException
 from services.category_service import CategoryService
+from services.order_service import OrderService
 from services.product_service import ProductService
 from services.store_service import StoreService
 from services.user_service import UserService
@@ -23,6 +24,37 @@ def _require_seller_role():
 @staff_bp.get("/")
 def dashboard():
     return render_template("staff/dashboard.html")
+
+
+@staff_bp.get("/orders")
+def order_list():
+    uid = int(session["user_id"])
+    orders = OrderService().list_dicts_for_role("seller", uid)
+    return render_template("staff/order_list.html", orders=orders)
+
+
+@staff_bp.route("/orders/<int:oid>", methods=["GET", "POST"])
+def order_detail(oid):
+    uid = int(session["user_id"])
+    if request.method == "POST":
+        try:
+            OrderService().update_status(oid, request.form.to_dict(), "seller")
+            flash("Order status updated.", "success")
+        except ValidationException as exc:
+            flash(getattr(exc, "message", str(exc)), "danger")
+        except NotFoundException:
+            flash("Order not found.", "danger")
+        return redirect(url_for("staff.order_detail", oid=oid))
+    try:
+        order, next_statuses = OrderService().get_dict_with_next_statuses(oid, uid, "seller")
+    except NotFoundException:
+        flash("Order not found.", "danger")
+        return redirect(url_for("staff.order_list"))
+    return render_template(
+        "staff/order_detail.html",
+        order=order,
+        next_statuses=next_statuses,
+    )
 
 
 @staff_bp.get("/categories")
