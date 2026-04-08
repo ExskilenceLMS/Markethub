@@ -8,22 +8,22 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "templates/customer/cart.html",
-            "title": "Cart page structure",
-            "description": "Cart shows hub layout, line table or empty state, qty forms, and total or browse link.",
+            "file": "templates/customer/orders.html",
+            "title": "Customer orders list layout",
+            "description": "Orders page should render heading, table columns, status and detail link structure.",
             "points": 10,
-            "requiredElements": ["header", "h1", "form", "table", "th", "td", "button"],
-            "requiredIdentifiers": ["customer-hub", "customer-cart-card", "customer-cart__total"],
+            "requiredElements": ["h1", "table", "thead", "tbody", "th", "td", "a"],
+            "requiredIdentifiers": ["customer-hub", "data-card", "data-table"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           },
           {
-            "file": "templates/customer/products.html",
-            "title": "Add-to-cart on product cards",
-            "description": "Each product card posts product_id and quantity to the cart add endpoint.",
+            "file": "templates/admin/order_detail.html",
+            "title": "Admin order detail status form",
+            "description": "Admin detail must provide status summary and update form with status select.",
             "points": 8,
-            "requiredElements": ["form", "input", "button", "label", "ul", "li"],
-            "requiredIdentifiers": ["customer-product-card__cart-form", "customer-cart__qty-input"],
+            "requiredElements": ["h1", "dl", "dt", "dd", "form", "select", "button"],
+            "requiredIdentifiers": ["customer-profile-dl", "form-card", "btn-primary-fk"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           }
@@ -34,10 +34,10 @@
         "rules": [
           {
             "file": "static/css/style.css",
-            "title": "Cart and add-to-cart styles",
-            "description": "Styles for cart card, quantity inputs, product card cart row, and total.",
+            "title": "Order-related selectors",
+            "description": "Order pages reuse profile list, badges and order placement cart row styles.",
             "points": 10,
-            "requiredSelectors": [".customer-cart-card", ".customer-product-card__cart-form", ".customer-cart__total", ".customer-cart__qty-input"],
+            "requiredSelectors": [".customer-profile-dl", ".badge--ok", ".customer-cart__place-row", ".data-table"],
             "error_message": "{requiredSelectors} not found"
           }
         ]
@@ -50,28 +50,28 @@
       "timeout": 60000,
       "points": 48,
       "runTests": {
-        "test_guest_cart_redirects_to_login": "Guest Cart Blocked",
-        "test_customer_cart_page_renders_when_empty": "Empty Cart Page",
-        "test_cart_add_post_redirects_to_products": "Add To Cart Redirect",
-        "test_cart_add_merges_quantity_same_product": "Cart Merge Same Product",
-        "test_cart_update_line_reflects_in_total": "Update Line Total",
-        "test_cart_clear_empties_cart": "Clear Cart"
+        "test_guest_orders_redirects_to_login": "Guest Orders Blocked",
+        "test_place_order_from_cart_redirects_and_persists_order": "Place Order From Cart",
+        "test_place_order_empty_cart_redirects_back_to_cart": "Empty Cart Place Order Guard",
+        "test_customer_orders_list_renders_placed_order": "Customer Orders Listing",
+        "test_customer_cannot_view_other_customers_order_detail": "Order Detail Access Control",
+        "test_admin_updates_order_status_to_shipped": "Admin Status Update"
       },
       "descriptions": {
-        "test_guest_cart_redirects_to_login": "Verifies GET /customer/cart without a customer session redirects to web login.",
-        "test_customer_cart_page_renders_when_empty": "Verifies a logged-in customer sees the cart page and empty-state messaging when there are no lines.",
-        "test_cart_add_post_redirects_to_products": "Verifies POST /customer/cart/add responds with a redirect to the products catalog.",
-        "test_cart_add_merges_quantity_same_product": "Verifies repeated adds for the same product_id increase quantity on one cart row and total matches.",
-        "test_cart_update_line_reflects_in_total": "Verifies POST /customer/cart/<id>/update changes quantity and the rendered total updates.",
-        "test_cart_clear_empties_cart": "Verifies POST /customer/cart/clear removes all lines and the page shows the empty cart message."
+        "test_guest_orders_redirects_to_login": "Verifies unauthenticated users are redirected from /customer/orders to /login.",
+        "test_place_order_from_cart_redirects_and_persists_order": "Verifies placing order from a populated cart creates one Placed order, clears cart, and decrements product stock.",
+        "test_place_order_empty_cart_redirects_back_to_cart": "Verifies place-order from an empty cart redirects back to /customer/cart and does not create an order.",
+        "test_customer_orders_list_renders_placed_order": "Verifies /customer/orders renders the created order id and status in the listing.",
+        "test_customer_cannot_view_other_customers_order_detail": "Verifies customer authorization guard on /customer/orders/<id>.",
+        "test_admin_updates_order_status_to_shipped": "Verifies admin can change status from Placed to Shipped via /admin/orders/<id>."
       },
       "error_messages": {
-        "test_guest_cart_redirects_to_login": "Guests must be redirected from the cart route.",
-        "test_customer_cart_page_renders_when_empty": "Empty cart must render for customers.",
-        "test_cart_add_post_redirects_to_products": "Add to cart must redirect to products.",
-        "test_cart_add_merges_quantity_same_product": "Same product adds must merge into one line.",
-        "test_cart_update_line_reflects_in_total": "Cart line update must refresh totals.",
-        "test_cart_clear_empties_cart": "Clear cart must remove all items."
+        "test_guest_orders_redirects_to_login": "Guests must not access customer orders routes.",
+        "test_place_order_from_cart_redirects_and_persists_order": "Place-order must persist order, clear cart, and adjust stock.",
+        "test_place_order_empty_cart_redirects_back_to_cart": "Empty cart place-order must redirect to cart and avoid order creation.",
+        "test_customer_orders_list_renders_placed_order": "Orders list should show newly placed order details.",
+        "test_customer_cannot_view_other_customers_order_detail": "Customers should not view other customers' orders.",
+        "test_admin_updates_order_status_to_shipped": "Admin status update should persist new order state."
       }
     },
     "dynamic": {
@@ -86,8 +86,8 @@
       "tests": [
         {
           "isMandatory": true,
-          "name": "Customer opens cart from navbar",
-          "description": "Seed customer alice@example.com / user123; after login, Cart nav opens /customer/cart with hub layout.",
+          "name": "Customer opens Orders page",
+          "description": "Login with seeded customer and confirm Orders page structure is visible.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
@@ -111,35 +111,35 @@
             },
             {
               "type": "click",
-              "selector": ".nav-links > li:nth-child(3) a"
+              "selector": "a[href*='/customer/orders']"
             },
             {
               "type": "wait",
-              "duration": 2000
+              "duration": 1800
             }
           ],
           "assertions": [
             {
               "type": "url",
-              "value": "/customer/cart",
-              "error_message": "Expected cart URL"
+              "value": "/customer/orders",
+              "error_message": "Expected /customer/orders"
             },
             {
               "type": "visible",
               "selector": ".customer-hub",
-              "error_message": "Customer hub not visible"
+              "error_message": "Customer orders container not visible"
             },
             {
               "type": "exists",
               "selector": "h1.page-title",
-              "error_message": "Cart page title missing"
+              "error_message": "Orders page title missing"
             }
           ]
         },
         {
           "isMandatory": true,
-          "name": "Add product to cart from catalog",
-          "description": "Logs in as alice, opens Shop then All products, submits first Add to cart, then opens Cart and sees total row.",
+          "name": "Customer places order from cart",
+          "description": "Login, open products, add one item to cart, place order, and verify redirection to orders listing.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
@@ -163,7 +163,7 @@
             },
             {
               "type": "click",
-              "selector": ".nav-links > li:nth-child(2) a"
+              "selector": "a[href='/customer/products']"
             },
             {
               "type": "wait",
@@ -171,44 +171,44 @@
             },
             {
               "type": "click",
-              "selector": "a[href*='/customer/products']"
-            },
-            {
-              "type": "wait",
-              "duration": 2000
-            },
-            {
-              "type": "click",
               "selector": "form.customer-product-card__cart-form button[type='submit']"
             },
             {
               "type": "wait",
-              "duration": 2000
+              "duration": 1800
             },
             {
               "type": "click",
-              "selector": ".nav-links > li:nth-child(3) a"
+              "selector": "a[href='/customer/cart']"
             },
             {
               "type": "wait",
-              "duration": 2000
+              "duration": 1500
+            },
+            {
+              "type": "click",
+              "selector": "form.customer-cart__place-row button[type='submit']"
+            },
+            {
+              "type": "wait",
+              "duration": 2200
             }
           ],
           "assertions": [
             {
               "type": "url",
-              "value": "/customer/cart",
-              "error_message": "Expected cart after add"
+              "value": "/customer/orders",
+              "error_message": "Expected redirect to orders after place-order"
             },
             {
               "type": "visible",
-              "selector": ".customer-cart-card",
-              "error_message": "Cart card with lines not visible"
+              "selector": ".data-card",
+              "error_message": "Orders card not visible"
             },
             {
               "type": "exists",
-              "selector": "p.customer-cart__total",
-              "error_message": "Cart total line missing"
+              "selector": "table.data-table",
+              "error_message": "Orders table missing after placing order"
             }
           ]
         }

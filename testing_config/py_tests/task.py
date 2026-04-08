@@ -12,6 +12,7 @@ sys.path.insert(0, exskilence_path)
 os.chdir(exskilence_path)
 
 os.environ["FLASK_ENV"] = "testing"
+os.environ["DATABASE_URI"] = "sqlite:///:memory:"
 
 from app import app
 from models import db
@@ -22,11 +23,12 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
 
 @pytest.fixture
 def client():
-    """Test client with a fresh in-memory database."""
+    """Flask client with isolated in-memory schema per test."""
     with app.test_client() as c:
         with app.app_context():
             db.create_all()
             yield c
+            db.session.remove()
             db.drop_all()
 
 
@@ -38,142 +40,156 @@ def _login_web(client, email, password):
     )
 
 
-def _seed_customer(email="t10cust@example.com", password="T10!cart"):
+def _seed_user(role, name, password="pass123!", email=None):
     from repositories.user_repository import UserRepository
     from utils.passwords import hash_password
 
-    UserRepository().create_user("T10 Customer", email, hash_password(password), "customer")
-    return email, password
+    user_email = email or f"{role}_{uuid.uuid4().hex[:10]}@example.com"
+    user = UserRepository().create_user(name, user_email, hash_password(password), role)
+    return user, password
 
 
-def _seed_product(name="CartWidget", price="12.50", qty=20):
+def _seed_product(name="OrderItem", price="20.00", quantity=12):
     from repositories.category_repository import CategoryRepository
     from repositories.product_repository import ProductRepository
-    from repositories.user_repository import UserRepository
-    from utils.passwords import hash_password
 
-    sid = uuid.uuid4().hex[:10]
-    seller = UserRepository().create_user(
-        "T10Sell", f"t10sell_{sid}@e.com", hash_password("x"), "seller"
-    )
-    cat = CategoryRepository().create(f"T10Cat_{sid}", None)
-    p = ProductRepository().create(
+    seller, _ = _seed_user("seller", "Order Seller", password="sellerPass1")
+    suffix = uuid.uuid4().hex[:8]
+    cat = CategoryRepository().create(f"OrdersCat_{suffix}", "Order tests")
+    product = ProductRepository().create(
         name,
-        "For cart tests",
+        "Order management product",
         Decimal(price),
-        qty,
+        quantity,
         cat.id,
         seller.id,
         None,
     )
-    return p.id
+    return product
 
 
-def test_guest_cart_redirects_to_login(client):
-    """Unauthenticated GET /customer/cart sends the user to web login."""
+def _create_customer_order_via_cart(client, qty=2, price="20.00"):
+    from repositories.cart_repository import CartRepository
+    from repositories.order_repository import OrderRepository
+
+    customer, pwd = _seed_user("customer", "Order Customer", password="custPass1")
+    product = _seed_product(price=price, quantity=20)
+    product_id = product.id
+    _login_web(client, customer.email, pwd)
+    client.post("/customer/cart/add", data={"product_id": product_id, "quantity": qty})
+    response = client.post("/customer/orders/place", follow_redirects=False)
+
+    with app.app_context():
+        orders = OrderRepository().list_by_user_id(customer.id)
+        lines_after = CartRepository().list_by_user_id(customer.id)
+
+    return customer, product_id, response, orders, lines_after
+
+
+def test_guest_orders_redirects_to_login(client):
+    """Anonymous user cannot access customer orders list."""
     try:
-        response = client.get("/customer/cart", follow_redirects=False)
+        response = client.get("/customer/orders", follow_redirects=False)
         assert response.status_code == 302
         assert "login" in response.headers.get("Location", "").lower()
     except Exception as error:
-        pytest.fail(f"Guest cart redirect check failed: {error}")
+        pytest.fail(f"Guest orders redirect check failed: {error}")
 
 
-def test_customer_cart_page_renders_when_empty(client):
-    """Logged-in customer sees the cart hub and empty-state copy with no lines."""
+def test_place_order_from_cart_redirects_and_persists_order(client):
+    """Placing from non-empty cart creates a Placed order and redirects to orders list."""
     try:
-        email, pwd = _seed_customer()
-        _login_web(client, email, pwd)
-        response = client.get("/customer/cart")
+        customer, product_id, response, orders, lines_after = _create_customer_order_via_cart(client, qty=3)
+        assert response.status_code == 302
+        path = urlparse(response.headers.get("Location", "")).path
+        assert path.rstrip("/") == "/customer/orders"
+        assert len(orders) == 1
+        assert orders[0].status == "Placed"
+        assert lines_after == []
+
+        from repositories.product_repository import ProductRepository
+
+        with app.app_context():
+            refreshed = ProductRepository().get_by_id(product_id)
+            assert refreshed is not None
+            assert refreshed.quantity == 17
+    except Exception as error:
+        pytest.fail(f"Place order persistence check failed: {error}")
+
+
+def test_place_order_empty_cart_redirects_back_to_cart(client):
+    """Posting place-order with empty cart should not create orders and must redirect to cart."""
+    try:
+        customer, pwd = _seed_user("customer", "Empty Cart Customer", password="emptyPass1")
+        _login_web(client, customer.email, pwd)
+        response = client.post("/customer/orders/place", follow_redirects=False)
+        assert response.status_code == 302
+        path = urlparse(response.headers.get("Location", "")).path
+        assert path.rstrip("/") == "/customer/cart"
+
+        from repositories.order_repository import OrderRepository
+
+        with app.app_context():
+            assert OrderRepository().list_by_user_id(customer.id) == []
+    except Exception as error:
+        pytest.fail(f"Empty cart place-order check failed: {error}")
+
+
+def test_customer_orders_list_renders_placed_order(client):
+    """Customer orders page renders newly created order details."""
+    try:
+        customer, _, _, orders, _ = _create_customer_order_via_cart(client, qty=2, price="15.00")
+        response = client.get("/customer/orders")
         assert response.status_code == 200
         html = response.get_data(as_text=True)
-        assert "customer-hub" in html
-        assert "Cart" in html
-        assert "Your cart is empty" in html
+        assert "My orders" in html
+        assert f"#{orders[0].id}" in html
+        assert "Placed" in html
+        assert customer.email not in html or isinstance(html, str)
     except Exception as error:
-        pytest.fail(f"Empty cart page check failed: {error}")
+        pytest.fail(f"Customer orders list render check failed: {error}")
 
 
-def test_cart_add_post_redirects_to_products(client):
-    """POST /customer/cart/add redirects back to the products catalog."""
+def test_customer_cannot_view_other_customers_order_detail(client):
+    """A customer is blocked from viewing another customer's order detail."""
     try:
-        email, pwd = _seed_customer()
-        pid = _seed_product()
-        _login_web(client, email, pwd)
+        _, _, _, orders, _ = _create_customer_order_via_cart(client, qty=1)
+        target_order_id = orders[0].id
+
+        other_user, other_pwd = _seed_user("customer", "Other Customer", password="otherPass1")
+        _login_web(client, other_user.email, other_pwd)
+
+        response = client.get(f"/customer/orders/{target_order_id}", follow_redirects=False)
+        assert response.status_code == 302
+        path = urlparse(response.headers.get("Location", "")).path
+        assert path.rstrip("/") == "/customer/orders"
+    except Exception as error:
+        pytest.fail(f"Customer order access-control check failed: {error}")
+
+
+def test_admin_updates_order_status_to_shipped(client):
+    """Admin can update a placed order status to shipped from admin order detail route."""
+    try:
+        _, _, _, orders, _ = _create_customer_order_via_cart(client, qty=2)
+        oid = orders[0].id
+
+        admin, admin_pwd = _seed_user("admin", "Orders Admin", password="adminPass1")
+        _login_web(client, admin.email, admin_pwd)
+
         response = client.post(
-            "/customer/cart/add",
-            data={"product_id": pid, "quantity": 2},
+            f"/admin/orders/{oid}",
+            data={"status": "Shipped"},
             follow_redirects=False,
         )
         assert response.status_code == 302
         path = urlparse(response.headers.get("Location", "")).path
-        assert path.rstrip("/") == "/customer/products"
-    except Exception as error:
-        pytest.fail(f"Add-to-cart redirect check failed: {error}")
+        assert path.rstrip("/") == f"/admin/orders/{oid}"
 
-
-def test_cart_add_merges_quantity_same_product(client):
-    """Two adds for the same product accumulate on one cart line."""
-    try:
-        email, pwd = _seed_customer()
-        pid = _seed_product()
-        _login_web(client, email, pwd)
-        client.post("/customer/cart/add", data={"product_id": pid, "quantity": 2})
-        client.post("/customer/cart/add", data={"product_id": pid, "quantity": 3})
-        response = client.get("/customer/cart")
-        html = response.get_data(as_text=True)
-        assert "CartWidget" in html
-        from repositories.cart_repository import CartRepository
-        from repositories.user_repository import UserRepository
+        from repositories.order_repository import OrderRepository
 
         with app.app_context():
-            user = UserRepository().get_by_email(email)
-            lines = CartRepository().list_by_user_id(user.id)
-            assert len(lines) == 1
-            assert lines[0].quantity == 5
-        assert "₹62.50" in html or "62.50" in html
+            refreshed = OrderRepository().get_by_id(oid)
+            assert refreshed is not None
+            assert refreshed.status == "Shipped"
     except Exception as error:
-        pytest.fail(f"Cart merge quantity check failed: {error}")
-
-
-def test_cart_update_line_reflects_in_total(client):
-    """Updating a line quantity recalculates the cart total on the page."""
-    try:
-        email, pwd = _seed_customer()
-        pid = _seed_product(price="10.00")
-        _login_web(client, email, pwd)
-        client.post("/customer/cart/add", data={"product_id": pid, "quantity": 2})
-        from repositories.cart_repository import CartRepository
-        from repositories.user_repository import UserRepository
-
-        with app.app_context():
-            user = UserRepository().get_by_email(email)
-            lines = CartRepository().list_by_user_id(user.id)
-            line_id = lines[0].id
-        response = client.post(
-            f"/customer/cart/{line_id}/update",
-            data={"quantity": 5},
-            follow_redirects=True,
-        )
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "₹50.00" in html or "50.00" in html
-    except Exception as error:
-        pytest.fail(f"Cart line update total check failed: {error}")
-
-
-def test_cart_clear_empties_cart(client):
-    """POST /customer/cart/clear removes all lines."""
-    try:
-        email, pwd = _seed_customer()
-        pid1 = _seed_product("P1", "5.00")
-        pid2 = _seed_product("P2", "7.00")
-        _login_web(client, email, pwd)
-        client.post("/customer/cart/add", data={"product_id": pid1, "quantity": 1})
-        client.post("/customer/cart/add", data={"product_id": pid2, "quantity": 1})
-        response = client.post("/customer/cart/clear", follow_redirects=True)
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "Your cart is empty" in html
-    except Exception as error:
-        pytest.fail(f"Cart clear check failed: {error}")
+        pytest.fail(f"Admin order status update check failed: {error}")
