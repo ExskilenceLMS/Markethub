@@ -17,7 +17,7 @@ def _redirect_after_login(user: Dict[str, Any]):
     if role == "seller":
         return redirect(url_for("staff.dashboard"))
     if role == "customer":
-        return redirect(url_for("web.customer_home"))
+        return redirect(url_for("customer.dashboard"))
     return redirect(url_for("web.home"))
 
 
@@ -76,11 +76,3 @@ def logout():
     return redirect(url_for("web.home"))
 
 
-@web_bp.route("/customer")
-def customer_home():
-    try:
-        UserService.require_roles(session, ["customer"])
-    except AuthorizationException:
-        flash("Please log in as a customer.", "warning")
-        return redirect(url_for("web.login"))
-    return render_template("customer/home.html")

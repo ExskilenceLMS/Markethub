@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}My account — MarketHub{% endblock %}
+
+{% block content %}
+  <div class="customer-hub">
+    <h1 class="page-title">My account</h1>
+    <p class="customer-hub__intro">Browse categories and products. This area is view-only.</p>
+
+    <div class="data-card customer-profile-card">
+      <h2 class="customer-profile-card__title">Profile</h2>
+      <dl class="customer-profile-dl">
+        <div><dt>Name</dt><dd>{{ profile.name }}</dd></div>
+        <div><dt>Email</dt><dd>{{ profile.email }}</dd></div>
+        <div><dt>Member since</dt><dd>{{ profile.created_at[:10] if profile.created_at else '—' }}</dd></div>
+      </dl>
+    </div>
+
+    <nav class="customer-hub__nav" aria-label="Shop">
+      <a class="staff-hub__card" href="{{ url_for('customer.categories') }}">
+        <strong>Categories</strong>
+        <span>Browse all departments</span>
+      </a>
+      <a class="staff-hub__card" href="{{ url_for('customer.products') }}">
+        <strong>All products</strong>
+        <span>See the full catalog</span>
+      </a>
+    </nav>
+  </div>
+{% endblock %}

@@ -62,6 +62,15 @@ class ProductRepository:
         )
         return list(db.session.scalars(stmt).unique().all())
 
+    def list_by_category_id(self, category_id: int) -> List[Product]:
+        stmt = (
+            select(Product)
+            .where(Product.category_id == category_id)
+            .options(selectinload(Product.category), selectinload(Product.seller))
+            .order_by(Product.created_at.desc())
+        )
+        return list(db.session.scalars(stmt).unique().all())
+
     def update(
         self,
         product: Product,

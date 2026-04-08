@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Categories — MarketHub{% endblock %}
+
+{% block content %}
+  <div class="customer-hub">
+    <p class="customer-hub__back"><a href="{{ url_for('customer.dashboard') }}">← My account</a></p>
+    <h1 class="page-title">Categories</h1>
+    <p class="customer-hub__intro">Choose a category to filter products.</p>
+
+    {% if categories %}
+      <ul class="customer-category-grid">
+        {% for c in categories %}
+          <li class="customer-category-tile">
+            <a href="{{ url_for('customer.products', category_id=c.id) }}">
+              <span class="customer-category-tile__name">{{ c.name }}</span>
+              {% if c.description %}
+                <span class="customer-category-tile__desc">{{ c.description }}</span>
+              {% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="data-card"><p class="admin-welcome">No categories yet.</p></div>
+    {% endif %}
+  </div>
+{% endblock %}

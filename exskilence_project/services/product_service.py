@@ -44,6 +44,15 @@ class ProductService:
             items = self._products.list_all_ordered()
         return [p.to_dict() for p in items]
 
+    def list_catalog_dicts(self, category_id: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Read-only catalog for customer browsing."""
+        if category_id is not None:
+            self._ensure_category(category_id)
+            items = self._products.list_by_category_id(category_id)
+        else:
+            items = self._products.list_all_ordered()
+        return [p.to_dict() for p in items]
+
     def get_dict(self, product_id: int) -> Dict[str, Any]:
         p = self._products.get_by_id(product_id)
         if p is None:

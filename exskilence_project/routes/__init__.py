@@ -4,11 +4,13 @@ from flask import Flask
 def register_blueprints(app: Flask) -> None:
     from routes.admin_routes import admin_bp
     from routes.auth_routes import auth_bp
+    from routes.customer_routes import customer_bp
     from routes.health import health_bp
     from routes.staff_routes import staff_bp
     from routes.web_routes import web_bp
 
     app.register_blueprint(web_bp)
+    app.register_blueprint(customer_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(staff_bp)
     app.register_blueprint(health_bp)

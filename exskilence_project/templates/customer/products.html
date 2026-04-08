@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Products — MarketHub{% endblock %}
+
+{% block content %}
+  <div class="customer-hub">
+    <p class="customer-hub__back"><a href="{{ url_for('customer.dashboard') }}">← My account</a></p>
+    <header class="admin-page-header admin-page-header--row">
+      <div>
+        <h1 class="page-title">Products</h1>
+        <p class="customer-hub__intro">View-only catalog. Prices and availability are shown as listed.</p>
+      </div>
+    </header>
+
+    <div class="data-card customer-filter-card">
+      <form method="get" action="{{ url_for('customer.products') }}" class="customer-filter-form">
+        <label class="form-label-block" for="category_id">Category</label>
+        <select id="category_id" name="category_id" onchange="this.form.submit()">
+          <option value="">All categories</option>
+          {% for c in categories %}
+            <option value="{{ c.id }}" {% if selected_category_id is not none and selected_category_id == c.id %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button type="submit" class="btn-primary-fk btn-inline">Apply</button></noscript>
+      </form>
+    </div>
+
+    {% if products %}
+      <ul class="customer-product-grid">
+        {% for p in products %}
+          <li class="customer-product-card">
+            <div class="customer-product-card__media">
+              {% if p.image_url %}
+                <img src="{{ p.image_url }}" alt="" loading="lazy" width="160" height="160">
+              {% else %}
+                <span class="customer-product-card__placeholder" aria-hidden="true">No image</span>
+              {% endif %}
+            </div>
+            <div class="customer-product-card__body">
+              <h2 class="customer-product-card__title">{{ p.name }}</h2>
+              <p class="customer-product-card__meta">{{ p.category_name }}</p>
+              <p class="customer-product-card__price">₹{{ "%.2f"|format(p.price|float) }}</p>
+              <p class="customer-product-card__qty">Stock: {{ p.quantity }}</p>
+              {% if p.description %}
+                <p class="customer-product-card__desc">{{ p.description }}</p>
+              {% endif %}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="data-card"><p class="admin-welcome">No products in this view.</p></div>
+    {% endif %}
+  </div>
+{% endblock %}
