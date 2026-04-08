@@ -8,32 +8,22 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "templates/admin/dashboard.html",
-            "title": "Admin dashboard content structure",
-            "description": "Dashboard extends admin base, shows header, welcome copy, and a statistics grid with stat cards.",
+            "file": "templates/admin/category_form.html",
+            "title": "Admin category structured form",
+            "description": "Category create/edit uses form-card, POST form, name input, optional description textarea, and save control.",
             "points": 10,
-            "requiredElements": ["header", "section", "h1"],
-            "requiredIdentifiers": ["admin-page-header", "stat-grid", "page-title"],
+            "requiredElements": ["form", "input", "textarea", "label", "button"],
+            "requiredIdentifiers": ["form-card", "name", "description"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           },
           {
-            "file": "templates/partials/stat_card.html",
-            "title": "Stat card macro markup",
-            "description": "Reusable stat card partial used on the admin dashboard.",
-            "points": 6,
-            "requiredElements": ["div", "p"],
-            "requiredIdentifiers": ["stat-card", "stat-card__label", "stat-card__value"],
-            "error_message": "{requiredElements} not found",
-            "error_message_identifiers": "{requiredIdentifiers} not found"
-          },
-          {
-            "file": "templates/partials/admin_sidebar.html",
-            "title": "Admin sidebar navigation",
-            "description": "Controlled admin UI exposes sidebar links for dashboard, users, sellers, and categories.",
-            "points": 8,
-            "requiredElements": ["aside", "nav", "a"],
-            "requiredIdentifiers": ["admin-sidebar", "admin-sidebar__link"],
+            "file": "templates/admin/store_form.html",
+            "title": "Admin store structured form",
+            "description": "Store form includes name, seller select, category checkbox grid, and active toggle.",
+            "points": 10,
+            "requiredElements": ["form", "select", "fieldset", "input", "label"],
+            "requiredIdentifiers": ["form-card", "seller_id", "checkbox-grid"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           }
@@ -44,10 +34,10 @@
         "rules": [
           {
             "file": "static/css/style.css",
-            "title": "Admin layout and stat card styles",
-            "description": "Theme styles for admin shell, sidebar, main column, and dashboard stat cards.",
+            "title": "Form and checkbox layout styles",
+            "description": "Structured admin forms use form-card, checkbox grid, and checkbox labels.",
             "points": 10,
-            "requiredSelectors": [".admin-layout", ".admin-sidebar", ".admin-main", ".stat-card", ".stat-grid"],
+            "requiredSelectors": [".form-card", ".checkbox-grid", ".checkbox-label", ".form-label-block"],
             "error_message": "{requiredSelectors} not found"
           }
         ]
@@ -57,31 +47,31 @@
       "required": true,
       "requiresFlask": false,
       "testFile": "testing_config/py_tests/task.py",
-      "timeout": 45000,
+      "timeout": 60000,
       "points": 48,
       "runTests": {
-        "test_unauthenticated_get_admin_redirects_to_login": "Guest Blocked From Admin",
-        "test_customer_session_get_admin_redirects_to_login": "Customer Blocked From Admin",
-        "test_admin_get_dashboard_returns_200_with_layout": "Admin Dashboard Loads",
-        "test_admin_dashboard_renders_stat_grid_with_user_counts": "Admin Stats Grid",
-        "test_admin_users_page_accessible_for_admin_session": "Admin Users Page",
-        "test_admin_login_redirects_to_admin_dashboard": "Admin Login Lands On Admin"
+        "test_admin_category_new_get_renders_form_fields": "Category Form GET",
+        "test_admin_category_post_creates_and_redirects_to_list": "Category Create Redirect",
+        "test_admin_category_post_empty_name_shows_validation_ui": "Category Validation UI",
+        "test_admin_store_new_get_renders_seller_select_and_category_grid": "Store Form GET",
+        "test_admin_store_post_creates_and_redirects_to_store_list": "Store Create Redirect",
+        "test_seller_staff_stores_readonly_page_loads": "Seller Stores Read-Only"
       },
       "descriptions": {
-        "test_unauthenticated_get_admin_redirects_to_login": "Verifies GET /admin/ without a session returns 302 to the web login route.",
-        "test_customer_session_get_admin_redirects_to_login": "Verifies a logged-in customer receives 302 to login when requesting /admin/ (role guard).",
-        "test_admin_get_dashboard_returns_200_with_layout": "Verifies an admin user sees HTTP 200 with admin-layout, sidebar, and dashboard title.",
-        "test_admin_dashboard_renders_stat_grid_with_user_counts": "Verifies stat-grid and multiple stat-card blocks with role labels after seeding three users.",
-        "test_admin_users_page_accessible_for_admin_session": "Verifies GET /admin/users returns 200 with admin layout and Users copy for an admin session.",
-        "test_admin_login_redirects_to_admin_dashboard": "Verifies POST /login as admin returns 302 to /admin per role-based redirect."
+        "test_admin_category_new_get_renders_form_fields": "Verifies an admin session receives the category new page with form-card, name, description textarea, and POST form.",
+        "test_admin_category_post_creates_and_redirects_to_list": "Verifies POST /admin/categories/new with valid data returns 302 to /admin/categories and the new row appears on the list.",
+        "test_admin_category_post_empty_name_shows_validation_ui": "Verifies empty name re-renders the form with Category name is required and error partials.",
+        "test_admin_store_new_get_renders_seller_select_and_category_grid": "Verifies store new page includes seller_id select, category_ids checkboxes in checkbox-grid, and is_active toggle.",
+        "test_admin_store_post_creates_and_redirects_to_store_list": "Verifies POST /admin/stores/new with seller and category redirects to /admin/stores and lists the store.",
+        "test_seller_staff_stores_readonly_page_loads": "Verifies a seller can GET /staff/stores and see the read-only stores UI."
       },
       "error_messages": {
-        "test_unauthenticated_get_admin_redirects_to_login": "Unauthenticated users must be redirected from /admin to login.",
-        "test_customer_session_get_admin_redirects_to_login": "Customers must not access the admin blueprint.",
-        "test_admin_get_dashboard_returns_200_with_layout": "Admins must receive the dashboard page with layout chrome.",
-        "test_admin_dashboard_renders_stat_grid_with_user_counts": "Dashboard must render the statistics grid and cards.",
-        "test_admin_users_page_accessible_for_admin_session": "Admins must open /admin/users successfully.",
-        "test_admin_login_redirects_to_admin_dashboard": "Admin web login must redirect to the admin dashboard path."
+        "test_admin_category_new_get_renders_form_fields": "Admin category form must expose structured fields.",
+        "test_admin_category_post_creates_and_redirects_to_list": "Valid category submission must redirect to the category list.",
+        "test_admin_category_post_empty_name_shows_validation_ui": "Invalid category input must show validation in the template.",
+        "test_admin_store_new_get_renders_seller_select_and_category_grid": "Store form must include seller and category controls.",
+        "test_admin_store_post_creates_and_redirects_to_store_list": "Valid store submission must redirect to the store list.",
+        "test_seller_staff_stores_readonly_page_loads": "Seller must access the staff stores read-only page."
       }
     },
     "dynamic": {
@@ -96,33 +86,8 @@
       "tests": [
         {
           "isMandatory": true,
-          "name": "Unauthenticated admin URL redirects to login",
-          "description": "Opening /admin/ without a session should send the browser to the login page (controlled access).",
-          "path": "/admin/",
-          "captureScreenshot": true,
-          "actions": [
-            {
-              "type": "wait",
-              "duration": 800
-            }
-          ],
-          "assertions": [
-            {
-              "type": "url",
-              "value": "/login",
-              "error_message": "Expected redirect to /login"
-            },
-            {
-              "type": "visible",
-              "selector": "form[method='post'] input[name='email']",
-              "error_message": "Login form not visible after redirect"
-            }
-          ]
-        },
-        {
-          "isMandatory": true,
-          "name": "Seeded admin login and dashboard UI",
-          "description": "Uses seed user admin@example.com / user123 from database/seed_data.sql; lands on /admin with layout and opens Users from the sidebar.",
+          "name": "Admin navigates to category form",
+          "description": "Logs in with seed admin@example.com / user123 (database/seed_data.sql), opens Categories, then Add category, and sees structured fields.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
@@ -146,28 +111,106 @@
             },
             {
               "type": "click",
-              "selector": "a.admin-sidebar__link[href*='users']"
+              "selector": "a.admin-sidebar__link[href$='/categories']"
             },
             {
               "type": "wait",
               "duration": 1500
+            },
+            {
+              "type": "click",
+              "selector": "a.btn-primary-fk[href*='categories/new']"
+            },
+            {
+              "type": "wait",
+              "duration": 1200
             }
           ],
           "assertions": [
             {
               "type": "url",
-              "value": "/admin/users",
-              "error_message": "Expected /admin/users after sidebar click"
+              "value": "/admin/categories/new",
+              "error_message": "Expected category new URL"
             },
             {
               "type": "visible",
-              "selector": ".admin-layout",
-              "error_message": "Admin layout not visible"
+              "selector": ".form-card form[method='post']",
+              "error_message": "Category POST form not visible"
             },
             {
               "type": "exists",
-              "selector": ".admin-sidebar",
-              "error_message": "Admin sidebar not found"
+              "selector": "input[name='name']",
+              "error_message": "Category name input missing"
+            },
+            {
+              "type": "exists",
+              "selector": "textarea[name='description']",
+              "error_message": "Description textarea missing"
+            }
+          ]
+        },
+        {
+          "isMandatory": true,
+          "name": "Admin store form structured controls",
+          "description": "From admin dashboard, opens Stores then Add store and verifies seller select and category checkbox grid (seed data).",
+          "path": "/login",
+          "captureScreenshot": true,
+          "actions": [
+            {
+              "type": "fill",
+              "selector": "input[name='email']",
+              "value": "admin@example.com"
+            },
+            {
+              "type": "fill",
+              "selector": "input[name='password']",
+              "value": "user123"
+            },
+            {
+              "type": "click",
+              "selector": "button.btn-primary-fk[type='submit']"
+            },
+            {
+              "type": "wait",
+              "duration": 2500
+            },
+            {
+              "type": "click",
+              "selector": "a.admin-sidebar__link[href$='/stores']"
+            },
+            {
+              "type": "wait",
+              "duration": 1500
+            },
+            {
+              "type": "click",
+              "selector": "a.btn-primary-fk[href*='stores/new']"
+            },
+            {
+              "type": "wait",
+              "duration": 1200
+            }
+          ],
+          "assertions": [
+            {
+              "type": "url",
+              "value": "/admin/stores/new",
+              "error_message": "Expected store new URL"
+            },
+            {
+              "type": "exists",
+              "selector": "select[name='seller_id']",
+              "error_message": "Seller select missing"
+            },
+            {
+              "type": "visible",
+              "selector": ".checkbox-grid",
+              "error_message": "Category checkbox grid not visible"
+            },
+            {
+              "type": "exists",
+              "selector": "input[name='name']",
+              "error_message": "Store name input missing"
             }
           ]
         }
