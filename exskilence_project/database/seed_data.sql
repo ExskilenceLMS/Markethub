@@ -8,6 +8,7 @@
 -- Task 12 (inventory): product quantities seeded below are used for stock validation and deduction.
 -- Task 13 (order workflow): users/products/cart seed data below supports end-to-end placement flow.
 -- Task 14 (order tracking): multiple order statuses are seeded for filter scenarios.
+-- Task 15 (workflow control): status mix below supports UI transition control and non-revert rules.
 
 SET NAMES utf8mb4;
 

@@ -22,13 +22,19 @@
     <form method="post" action="">
       <div class="form-group">
         <label class="form-label-block" for="status">New status</label>
-        <select id="status" name="status" required>
+        <select id="status" name="status" required {% if not next_statuses %}disabled{% endif %}>
           {% for s in all_statuses %}
-            <option value="{{ s }}" {% if default_status == s %}selected{% endif %}>{{ s }}</option>
+            <option
+              value="{{ s }}"
+              {% if default_status == s %}selected{% endif %}
+              {% if s not in next_statuses %}disabled{% endif %}
+            >
+              {{ s }}
+            </option>
           {% endfor %}
         </select>
       </div>
-      <button type="submit" class="btn-primary-fk btn-inline">Save</button>
+      <button type="submit" class="btn-primary-fk btn-inline" {% if not next_statuses %}disabled{% endif %}>Save</button>
     </form>
     {% if not next_statuses %}
       <p class="admin-welcome">No further valid transition from current status.</p>
