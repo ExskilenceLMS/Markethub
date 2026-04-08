@@ -37,151 +37,190 @@ def _login_web(client, email, password):
     )
 
 
-def _seed_admin(client):
+def _seed_admin(client, email="task8admin@example.com", password="Task8!adm"):
     from repositories.user_repository import UserRepository
     from utils.passwords import hash_password
 
-    UserRepository().create_user(
-        "Admin",
-        "task7admin@example.com",
-        hash_password("Task7!adm"),
-        "admin",
+    UserRepository().create_user("Task8 Admin", email, hash_password(password), "admin")
+    _login_web(client, email, password)
+    return email, password
+
+
+def _seller_with_store_category():
+    from repositories.category_repository import CategoryRepository
+    from repositories.store_repository import StoreRepository
+    from repositories.user_repository import UserRepository
+    from utils.passwords import hash_password
+
+    seller = UserRepository().create_user(
+        "Task8 Seller",
+        "task8seller@example.com",
+        hash_password("Task8!sel"),
+        "seller",
     )
-    _login_web(client, "task7admin@example.com", "Task7!adm")
+    cat = CategoryRepository().create("Task8 Cat", "for products")
+    StoreRepository().create("Task8 Store", seller.id, True, [cat.id])
+    return seller, cat
 
 
-def test_admin_category_new_get_renders_form_fields(client):
-    """GET /admin/categories/new shows structured category form (name, description, form-card)."""
+def test_admin_product_new_get_renders_crud_form(client):
+    """Admin GET /admin/products/new shows structured product form including seller select."""
     try:
         _seed_admin(client)
-        response = client.get("/admin/categories/new")
+        from repositories.user_repository import UserRepository
+        from utils.passwords import hash_password
+
+        UserRepository().create_user("S", "s@e.com", hash_password("x"), "seller")
+        from repositories.category_repository import CategoryRepository
+
+        CategoryRepository().create("C1", None)
+
+        response = client.get("/admin/products/new")
         assert response.status_code == 200
         html = response.get_data(as_text=True)
         assert "form-card" in html
         assert 'name="name"' in html
-        assert 'name="description"' in html
-        assert "<textarea" in html
-        assert 'method="post"' in html.lower()
+        assert 'name="price"' in html
+        assert 'name="quantity"' in html
+        assert 'name="category_id"' in html
+        assert 'name="seller_id"' in html
     except Exception as error:
-        pytest.fail(f"Category new form structure check failed: {error}")
+        pytest.fail(f"Admin product new form check failed: {error}")
 
 
-def test_admin_category_post_creates_and_redirects_to_list(client):
-    """Valid category POST redirects to the category list after create."""
+def test_admin_product_create_post_redirects_to_list(client):
+    """Valid admin product POST redirects to /admin/products and lists the product."""
     try:
         _seed_admin(client)
-        response = client.post(
-            "/admin/categories/new",
-            data={
-                "name": "Electronics Task7",
-                "description": "Gadgets and devices",
-            },
-            follow_redirects=False,
-        )
-        assert response.status_code == 302
-        path = urlparse(response.headers.get("Location", "")).path
-        assert path.rstrip("/") == "/admin/categories"
-        listed = client.get("/admin/categories")
-        assert listed.status_code == 200
-        assert "Electronics Task7" in listed.get_data(as_text=True)
-    except Exception as error:
-        pytest.fail(f"Category create redirect check failed: {error}")
-
-
-def test_admin_category_post_empty_name_shows_validation_ui(client):
-    """Empty category name re-renders the form with validation messaging."""
-    try:
-        _seed_admin(client)
-        response = client.post(
-            "/admin/categories/new",
-            data={"name": "", "description": ""},
-        )
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "Category name is required" in html
-        assert "form-errors" in html or "field-error" in html
-    except Exception as error:
-        pytest.fail(f"Category validation UI check failed: {error}")
-
-
-def test_admin_store_new_get_renders_seller_select_and_category_grid(client):
-    """Store form exposes seller select, category checkboxes, and active toggle."""
-    try:
         from repositories.category_repository import CategoryRepository
         from repositories.user_repository import UserRepository
         from utils.passwords import hash_password
 
-        UserRepository().create_user(
-            "Seller One",
-            "seller1@example.com",
-            hash_password("s"),
-            "seller",
+        seller = UserRepository().create_user("Sv", "sv@e.com", hash_password("x"), "seller")
+        cat = CategoryRepository().create("CatAdm", None)
+        response = client.post(
+            "/admin/products/new",
+            data={
+                "name": "Widget Task8",
+                "description": "A widget",
+                "price": "19.99",
+                "quantity": "5",
+                "category_id": str(cat.id),
+                "seller_id": str(seller.id),
+            },
+            follow_redirects=False,
         )
-        CategoryRepository().create("Cat A", "desc")
+        assert response.status_code == 302
+        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/admin/products"
+        listed = client.get("/admin/products")
+        assert listed.status_code == 200
+        assert "Widget Task8" in listed.get_data(as_text=True)
+    except Exception as error:
+        pytest.fail(f"Admin product create redirect check failed: {error}")
+
+
+def test_admin_product_post_empty_name_shows_validation(client):
+    """Missing product name re-renders the form with validation errors."""
+    try:
         _seed_admin(client)
-        response = client.get("/admin/stores/new")
+        from repositories.category_repository import CategoryRepository
+        from repositories.user_repository import UserRepository
+        from utils.passwords import hash_password
+
+        seller = UserRepository().create_user("S2", "s2@e.com", hash_password("x"), "seller")
+        CategoryRepository().create("Cx", None)
+        response = client.post(
+            "/admin/products/new",
+            data={
+                "name": "",
+                "price": "10",
+                "quantity": "1",
+                "category_id": "1",
+                "seller_id": str(seller.id),
+            },
+        )
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert "Product name is required" in html
+    except Exception as error:
+        pytest.fail(f"Admin product validation UI check failed: {error}")
+
+
+def test_seller_product_new_get_renders_form_when_store_has_category(client):
+    """Seller with a store linked to a category can open the add-product form."""
+    try:
+        seller, _cat = _seller_with_store_category()
+        _login_web(client, "task8seller@example.com", "Task8!sel")
+        response = client.get("/staff/products/new")
         assert response.status_code == 200
         html = response.get_data(as_text=True)
         assert "form-card" in html
-        assert 'name="seller_id"' in html
-        assert 'name="category_ids"' in html
-        assert "checkbox-grid" in html
-        assert 'name="is_active"' in html
+        assert 'name="name"' in html and 'name="price"' in html
+        assert 'name="category_id"' in html
+        assert 'name="seller_id"' not in html
     except Exception as error:
-        pytest.fail(f"Store new form structure check failed: {error}")
+        pytest.fail(f"Seller product new form check failed: {error}")
 
 
-def test_admin_store_post_creates_and_redirects_to_store_list(client):
-    """Creating a store with seller and optional categories redirects to store list."""
+def test_seller_product_create_post_redirects_to_list(client):
+    """Seller can create a product assigned to an allowed category."""
     try:
-        from repositories.category_repository import CategoryRepository
-        from repositories.user_repository import UserRepository
-        from utils.passwords import hash_password
-
-        seller = UserRepository().create_user(
-            "Seller Two",
-            "seller2@example.com",
-            hash_password("s"),
-            "seller",
-        )
-        cat = CategoryRepository().create("Cat B", None)
-        _seed_admin(client)
+        seller, cat = _seller_with_store_category()
+        _login_web(client, "task8seller@example.com", "Task8!sel")
         response = client.post(
-            "/admin/stores/new",
+            "/staff/products/new",
             data={
-                "name": "Flagship Task7",
-                "seller_id": str(seller.id),
-                "is_active": "1",
-                "category_ids": str(cat.id),
+                "name": "Seller Item 8",
+                "description": "From seller",
+                "price": "8.50",
+                "quantity": "12",
+                "category_id": str(cat.id),
             },
             follow_redirects=False,
         )
         assert response.status_code == 302
-        path = urlparse(response.headers.get("Location", "")).path
-        assert path.rstrip("/") == "/admin/stores"
-        listed = client.get("/admin/stores")
-        assert listed.status_code == 200
-        assert "Flagship Task7" in listed.get_data(as_text=True)
+        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/staff/products"
+        listed = client.get("/staff/products")
+        assert "Seller Item 8" in listed.get_data(as_text=True)
     except Exception as error:
-        pytest.fail(f"Store create redirect check failed: {error}")
+        pytest.fail(f"Seller product create check failed: {error}")
 
 
-def test_seller_staff_stores_readonly_page_loads(client):
-    """Seller session can open the read-only My stores page under /staff/stores."""
+def test_admin_product_delete_removes_product(client):
+    """Admin POST delete removes the product from the catalog list."""
     try:
+        _seed_admin(client)
+        from repositories.category_repository import CategoryRepository
         from repositories.user_repository import UserRepository
         from utils.passwords import hash_password
 
-        UserRepository().create_user(
-            "Seller Three",
-            "seller3@example.com",
-            hash_password("Staff!77"),
-            "seller",
+        seller = UserRepository().create_user("Sd", "sd@e.com", hash_password("x"), "seller")
+        cat = CategoryRepository().create("Cd", None)
+        client.post(
+            "/admin/products/new",
+            data={
+                "name": "ToDelete8",
+                "price": "1.00",
+                "quantity": "1",
+                "category_id": str(cat.id),
+                "seller_id": str(seller.id),
+            },
+            follow_redirects=True,
         )
-        _login_web(client, "seller3@example.com", "Staff!77")
-        response = client.get("/staff/stores")
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "Your stores" in html or "stores" in html.lower()
+        listed_before = client.get("/admin/products")
+        html_b = listed_before.get_data(as_text=True)
+        assert "ToDelete8" in html_b
+        import re
+
+        m = re.search(r"/admin/products/(\d+)/delete", html_b)
+        assert m, "expected delete form with product id"
+        pid = m.group(1)
+        del_resp = client.post(
+            "/admin/products/%s/delete" % pid,
+            follow_redirects=False,
+        )
+        assert del_resp.status_code == 302
+        listed_after = client.get("/admin/products")
+        assert "ToDelete8" not in listed_after.get_data(as_text=True)
     except Exception as error:
-        pytest.fail(f"Seller stores readonly page check failed: {error}")
+        pytest.fail(f"Admin product delete check failed: {error}")

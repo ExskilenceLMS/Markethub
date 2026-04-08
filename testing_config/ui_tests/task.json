@@ -8,22 +8,22 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "templates/admin/category_form.html",
-            "title": "Admin category structured form",
-            "description": "Category create/edit uses form-card, POST form, name input, optional description textarea, and save control.",
+            "file": "templates/admin/product_form.html",
+            "title": "Admin product CRUD form",
+            "description": "Admin product create/edit includes name, pricing, quantity, category, seller assignment, and optional image URL.",
             "points": 10,
-            "requiredElements": ["form", "input", "textarea", "label", "button"],
-            "requiredIdentifiers": ["form-card", "name", "description"],
+            "requiredElements": ["form", "input", "textarea", "select", "label", "button"],
+            "requiredIdentifiers": ["form-card", "category_id", "seller_id", "price"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           },
           {
-            "file": "templates/admin/store_form.html",
-            "title": "Admin store structured form",
-            "description": "Store form includes name, seller select, category checkbox grid, and active toggle.",
-            "points": 10,
-            "requiredElements": ["form", "select", "fieldset", "input", "label"],
-            "requiredIdentifiers": ["form-card", "seller_id", "checkbox-grid"],
+            "file": "templates/staff/product_form.html",
+            "title": "Staff seller product form",
+            "description": "Seller-facing product form uses form-card and category select scoped to store-linked categories; no seller_id field.",
+            "points": 8,
+            "requiredElements": ["form", "input", "textarea", "select", "label", "button"],
+            "requiredIdentifiers": ["form-card", "category_id", "staff-hub--wide"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           }
@@ -34,10 +34,10 @@
         "rules": [
           {
             "file": "static/css/style.css",
-            "title": "Form and checkbox layout styles",
-            "description": "Structured admin forms use form-card, checkbox grid, and checkbox labels.",
-            "points": 10,
-            "requiredSelectors": [".form-card", ".checkbox-grid", ".checkbox-label", ".form-label-block"],
+            "title": "Product list and staff hub styles",
+            "description": "Catalog tables and wide staff layout for product management.",
+            "points": 8,
+            "requiredSelectors": [".data-table", ".data-card", ".form-card", ".staff-hub--wide"],
             "error_message": "{requiredSelectors} not found"
           }
         ]
@@ -50,28 +50,28 @@
       "timeout": 60000,
       "points": 48,
       "runTests": {
-        "test_admin_category_new_get_renders_form_fields": "Category Form GET",
-        "test_admin_category_post_creates_and_redirects_to_list": "Category Create Redirect",
-        "test_admin_category_post_empty_name_shows_validation_ui": "Category Validation UI",
-        "test_admin_store_new_get_renders_seller_select_and_category_grid": "Store Form GET",
-        "test_admin_store_post_creates_and_redirects_to_store_list": "Store Create Redirect",
-        "test_seller_staff_stores_readonly_page_loads": "Seller Stores Read-Only"
+        "test_admin_product_new_get_renders_crud_form": "Admin Product Form GET",
+        "test_admin_product_create_post_redirects_to_list": "Admin Product Create",
+        "test_admin_product_post_empty_name_shows_validation": "Admin Product Validation",
+        "test_seller_product_new_get_renders_form_when_store_has_category": "Seller Product Form GET",
+        "test_seller_product_create_post_redirects_to_list": "Seller Product Create",
+        "test_admin_product_delete_removes_product": "Admin Product Delete"
       },
       "descriptions": {
-        "test_admin_category_new_get_renders_form_fields": "Verifies an admin session receives the category new page with form-card, name, description textarea, and POST form.",
-        "test_admin_category_post_creates_and_redirects_to_list": "Verifies POST /admin/categories/new with valid data returns 302 to /admin/categories and the new row appears on the list.",
-        "test_admin_category_post_empty_name_shows_validation_ui": "Verifies empty name re-renders the form with Category name is required and error partials.",
-        "test_admin_store_new_get_renders_seller_select_and_category_grid": "Verifies store new page includes seller_id select, category_ids checkboxes in checkbox-grid, and is_active toggle.",
-        "test_admin_store_post_creates_and_redirects_to_store_list": "Verifies POST /admin/stores/new with seller and category redirects to /admin/stores and lists the store.",
-        "test_seller_staff_stores_readonly_page_loads": "Verifies a seller can GET /staff/stores and see the read-only stores UI."
+        "test_admin_product_new_get_renders_crud_form": "Verifies an admin session receives /admin/products/new with form-card and fields name, price, quantity, category_id, seller_id.",
+        "test_admin_product_create_post_redirects_to_list": "Verifies POST creates a product, returns 302 to /admin/products, and the name appears on the list.",
+        "test_admin_product_post_empty_name_shows_validation": "Verifies empty name returns 200 with Product name is required.",
+        "test_seller_product_new_get_renders_form_when_store_has_category": "Verifies a seller with a store linked to a category sees the add-product form without seller_id.",
+        "test_seller_product_create_post_redirects_to_list": "Verifies seller POST creates a product and redirects to /staff/products with the new row.",
+        "test_admin_product_delete_removes_product": "Verifies admin POST to product delete removes the product from the admin list."
       },
       "error_messages": {
-        "test_admin_category_new_get_renders_form_fields": "Admin category form must expose structured fields.",
-        "test_admin_category_post_creates_and_redirects_to_list": "Valid category submission must redirect to the category list.",
-        "test_admin_category_post_empty_name_shows_validation_ui": "Invalid category input must show validation in the template.",
-        "test_admin_store_new_get_renders_seller_select_and_category_grid": "Store form must include seller and category controls.",
-        "test_admin_store_post_creates_and_redirects_to_store_list": "Valid store submission must redirect to the store list.",
-        "test_seller_staff_stores_readonly_page_loads": "Seller must access the staff stores read-only page."
+        "test_admin_product_new_get_renders_crud_form": "Admin product form must expose full CRUD fields.",
+        "test_admin_product_create_post_redirects_to_list": "Admin must be able to create products and see them listed.",
+        "test_admin_product_post_empty_name_shows_validation": "Invalid admin product input must show validation.",
+        "test_seller_product_new_get_renders_form_when_store_has_category": "Seller must see the product form when categories exist via stores.",
+        "test_seller_product_create_post_redirects_to_list": "Seller must create products for allowed categories.",
+        "test_admin_product_delete_removes_product": "Admin must be able to delete a product."
       }
     },
     "dynamic": {
@@ -86,8 +86,8 @@
       "tests": [
         {
           "isMandatory": true,
-          "name": "Admin navigates to category form",
-          "description": "Logs in with seed admin@example.com / user123 (database/seed_data.sql), opens Categories, then Add category, and sees structured fields.",
+          "name": "Admin opens structured product form",
+          "description": "Seed admin admin@example.com / user123 (database/seed_data.sql) navigates to Products then Add product.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
@@ -111,7 +111,7 @@
             },
             {
               "type": "click",
-              "selector": "a.admin-sidebar__link[href$='/categories']"
+              "selector": "a.admin-sidebar__link[href$='/products']"
             },
             {
               "type": "wait",
@@ -119,7 +119,7 @@
             },
             {
               "type": "click",
-              "selector": "a.btn-primary-fk[href*='categories/new']"
+              "selector": "a.btn-primary-fk[href*='products/new']"
             },
             {
               "type": "wait",
@@ -129,30 +129,35 @@
           "assertions": [
             {
               "type": "url",
-              "value": "/admin/categories/new",
-              "error_message": "Expected category new URL"
-            },
-            {
-              "type": "visible",
-              "selector": ".form-card form[method='post']",
-              "error_message": "Category POST form not visible"
+              "value": "/admin/products/new",
+              "error_message": "Expected admin product new URL"
             },
             {
               "type": "exists",
               "selector": "input[name='name']",
-              "error_message": "Category name input missing"
+              "error_message": "Product name field missing"
             },
             {
               "type": "exists",
-              "selector": "textarea[name='description']",
-              "error_message": "Description textarea missing"
+              "selector": "input[name='price']",
+              "error_message": "Price field missing"
+            },
+            {
+              "type": "exists",
+              "selector": "select[name='seller_id']",
+              "error_message": "Seller select missing for admin"
+            },
+            {
+              "type": "exists",
+              "selector": "select[name='category_id']",
+              "error_message": "Category select missing"
             }
           ]
         },
         {
           "isMandatory": true,
-          "name": "Admin store form structured controls",
-          "description": "From admin dashboard, opens Stores then Add store and verifies seller select and category checkbox grid (seed data).",
+          "name": "Admin product list page structure",
+          "description": "After login, admin Products page shows heading and Add product control (seed data).",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
@@ -176,41 +181,33 @@
             },
             {
               "type": "click",
-              "selector": "a.admin-sidebar__link[href$='/stores']"
+              "selector": "a.admin-sidebar__link[href$='/products']"
             },
             {
               "type": "wait",
               "duration": 1500
-            },
-            {
-              "type": "click",
-              "selector": "a.btn-primary-fk[href*='stores/new']"
-            },
-            {
-              "type": "wait",
-              "duration": 1200
             }
           ],
           "assertions": [
             {
               "type": "url",
-              "value": "/admin/stores/new",
-              "error_message": "Expected store new URL"
-            },
-            {
-              "type": "exists",
-              "selector": "select[name='seller_id']",
-              "error_message": "Seller select missing"
+              "value": "/admin/products",
+              "error_message": "Expected /admin/products"
             },
             {
               "type": "visible",
-              "selector": ".checkbox-grid",
-              "error_message": "Category checkbox grid not visible"
+              "selector": "h1.page-title",
+              "error_message": "Products title not visible"
+            },
+            {
+              "type": "visible",
+              "selector": "a.btn-primary-fk[href*='products/new']",
+              "error_message": "Add product control not visible"
             },
             {
               "type": "exists",
-              "selector": "input[name='name']",
-              "error_message": "Store name input missing"
+              "selector": ".data-card",
+              "error_message": "Product list container missing"
             }
           ]
         }
