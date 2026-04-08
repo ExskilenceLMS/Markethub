@@ -8,22 +8,22 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "templates/admin/product_form.html",
-            "title": "Admin product CRUD form",
-            "description": "Admin product create/edit includes name, pricing, quantity, category, seller assignment, and optional image URL.",
+            "file": "templates/customer/dashboard.html",
+            "title": "Customer dashboard layout",
+            "description": "My account hub shows profile card and navigation to categories and products.",
             "points": 10,
-            "requiredElements": ["form", "input", "textarea", "select", "label", "button"],
-            "requiredIdentifiers": ["form-card", "category_id", "seller_id", "price"],
+            "requiredElements": ["h1", "h2", "nav", "dl", "dt", "dd"],
+            "requiredIdentifiers": ["customer-hub", "customer-profile-card", "customer-hub__nav"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           },
           {
-            "file": "templates/staff/product_form.html",
-            "title": "Staff seller product form",
-            "description": "Seller-facing product form uses form-card and category select scoped to store-linked categories; no seller_id field.",
+            "file": "templates/customer/products.html",
+            "title": "Customer catalog and filter",
+            "description": "Products page provides GET filter by category and a product card grid.",
             "points": 8,
-            "requiredElements": ["form", "input", "textarea", "select", "label", "button"],
-            "requiredIdentifiers": ["form-card", "category_id", "staff-hub--wide"],
+            "requiredElements": ["form", "select", "ul", "li", "header"],
+            "requiredIdentifiers": ["customer-hub", "customer-filter-form", "customer-product-grid"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           }
@@ -34,10 +34,10 @@
         "rules": [
           {
             "file": "static/css/style.css",
-            "title": "Product list and staff hub styles",
-            "description": "Catalog tables and wide staff layout for product management.",
-            "points": 8,
-            "requiredSelectors": [".data-table", ".data-card", ".form-card", ".staff-hub--wide"],
+            "title": "Customer hub and catalog styles",
+            "description": "Styling for customer dashboard, profile, category tiles, filters, and product cards.",
+            "points": 10,
+            "requiredSelectors": [".customer-hub", ".customer-profile-card", ".customer-product-card", ".customer-filter-form"],
             "error_message": "{requiredSelectors} not found"
           }
         ]
@@ -50,28 +50,28 @@
       "timeout": 60000,
       "points": 48,
       "runTests": {
-        "test_admin_product_new_get_renders_crud_form": "Admin Product Form GET",
-        "test_admin_product_create_post_redirects_to_list": "Admin Product Create",
-        "test_admin_product_post_empty_name_shows_validation": "Admin Product Validation",
-        "test_seller_product_new_get_renders_form_when_store_has_category": "Seller Product Form GET",
-        "test_seller_product_create_post_redirects_to_list": "Seller Product Create",
-        "test_admin_product_delete_removes_product": "Admin Product Delete"
+        "test_guest_customer_dashboard_redirects_to_login": "Guest Blocked From Customer",
+        "test_customer_dashboard_shows_profile_and_shop_nav": "Customer Dashboard Content",
+        "test_customer_categories_page_renders_for_customer": "Customer Categories Page",
+        "test_customer_products_page_renders_catalog": "Customer Products Catalog",
+        "test_customer_login_redirects_to_customer_home": "Customer Login Redirect",
+        "test_non_customer_blocked_from_customer_routes": "Non-Customer Blocked"
       },
       "descriptions": {
-        "test_admin_product_new_get_renders_crud_form": "Verifies an admin session receives /admin/products/new with form-card and fields name, price, quantity, category_id, seller_id.",
-        "test_admin_product_create_post_redirects_to_list": "Verifies POST creates a product, returns 302 to /admin/products, and the name appears on the list.",
-        "test_admin_product_post_empty_name_shows_validation": "Verifies empty name returns 200 with Product name is required.",
-        "test_seller_product_new_get_renders_form_when_store_has_category": "Verifies a seller with a store linked to a category sees the add-product form without seller_id.",
-        "test_seller_product_create_post_redirects_to_list": "Verifies seller POST creates a product and redirects to /staff/products with the new row.",
-        "test_admin_product_delete_removes_product": "Verifies admin POST to product delete removes the product from the admin list."
+        "test_guest_customer_dashboard_redirects_to_login": "Verifies GET /customer/ without session returns 302 to the web login route.",
+        "test_customer_dashboard_shows_profile_and_shop_nav": "Verifies a logged-in customer sees My account, profile card, and links to categories and products.",
+        "test_customer_categories_page_renders_for_customer": "Verifies GET /customer/categories returns the customer hub and category grid or empty state.",
+        "test_customer_products_page_renders_catalog": "Verifies GET /customer/products shows the filter form and lists seeded-style products when they exist.",
+        "test_customer_login_redirects_to_customer_home": "Verifies POST /login as customer returns 302 to /customer.",
+        "test_non_customer_blocked_from_customer_routes": "Verifies a seller hitting /customer/ is redirected to login (role guard)."
       },
       "error_messages": {
-        "test_admin_product_new_get_renders_crud_form": "Admin product form must expose full CRUD fields.",
-        "test_admin_product_create_post_redirects_to_list": "Admin must be able to create products and see them listed.",
-        "test_admin_product_post_empty_name_shows_validation": "Invalid admin product input must show validation.",
-        "test_seller_product_new_get_renders_form_when_store_has_category": "Seller must see the product form when categories exist via stores.",
-        "test_seller_product_create_post_redirects_to_list": "Seller must create products for allowed categories.",
-        "test_admin_product_delete_removes_product": "Admin must be able to delete a product."
+        "test_guest_customer_dashboard_redirects_to_login": "Guests must not access the customer dashboard.",
+        "test_customer_dashboard_shows_profile_and_shop_nav": "Customer dashboard must show profile and shop navigation.",
+        "test_customer_categories_page_renders_for_customer": "Customers must open the categories browse page.",
+        "test_customer_products_page_renders_catalog": "Customers must see the catalog filter and product list.",
+        "test_customer_login_redirects_to_customer_home": "Customer login must land on the customer home path.",
+        "test_non_customer_blocked_from_customer_routes": "Only customers may use customer routes."
       }
     },
     "dynamic": {
@@ -86,15 +86,15 @@
       "tests": [
         {
           "isMandatory": true,
-          "name": "Admin opens structured product form",
-          "description": "Seed admin admin@example.com / user123 (database/seed_data.sql) navigates to Products then Add product.",
+          "name": "Customer login opens My account dashboard",
+          "description": "Uses seed customer alice@example.com / user123 (database/seed_data.sql); expects /customer with profile hub.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
             {
               "type": "fill",
               "selector": "input[name='email']",
-              "value": "admin@example.com"
+              "value": "alice@example.com"
             },
             {
               "type": "fill",
@@ -108,63 +108,42 @@
             {
               "type": "wait",
               "duration": 2500
-            },
-            {
-              "type": "click",
-              "selector": "a.admin-sidebar__link[href$='/products']"
-            },
-            {
-              "type": "wait",
-              "duration": 1500
-            },
-            {
-              "type": "click",
-              "selector": "a.btn-primary-fk[href*='products/new']"
-            },
-            {
-              "type": "wait",
-              "duration": 1200
             }
           ],
           "assertions": [
             {
               "type": "url",
-              "value": "/admin/products/new",
-              "error_message": "Expected admin product new URL"
+              "value": "/customer",
+              "error_message": "Expected redirect to /customer"
+            },
+            {
+              "type": "visible",
+              "selector": ".customer-hub",
+              "error_message": "Customer hub not visible"
+            },
+            {
+              "type": "visible",
+              "selector": ".customer-profile-card",
+              "error_message": "Profile card not visible"
             },
             {
               "type": "exists",
-              "selector": "input[name='name']",
-              "error_message": "Product name field missing"
-            },
-            {
-              "type": "exists",
-              "selector": "input[name='price']",
-              "error_message": "Price field missing"
-            },
-            {
-              "type": "exists",
-              "selector": "select[name='seller_id']",
-              "error_message": "Seller select missing for admin"
-            },
-            {
-              "type": "exists",
-              "selector": "select[name='category_id']",
-              "error_message": "Category select missing"
+              "selector": ".customer-hub__nav a[href*='/customer/categories']",
+              "error_message": "Categories nav link missing"
             }
           ]
         },
         {
           "isMandatory": true,
-          "name": "Admin product list page structure",
-          "description": "After login, admin Products page shows heading and Add product control (seed data).",
+          "name": "Customer opens All products from dashboard",
+          "description": "After customer login, opens the All products card and sees the catalog filter (seed data).",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
             {
               "type": "fill",
               "selector": "input[name='email']",
-              "value": "admin@example.com"
+              "value": "alice@example.com"
             },
             {
               "type": "fill",
@@ -181,33 +160,28 @@
             },
             {
               "type": "click",
-              "selector": "a.admin-sidebar__link[href$='/products']"
+              "selector": "a[href*='/customer/products']"
             },
             {
               "type": "wait",
-              "duration": 1500
+              "duration": 2000
             }
           ],
           "assertions": [
             {
               "type": "url",
-              "value": "/admin/products",
-              "error_message": "Expected /admin/products"
+              "value": "/customer/products",
+              "error_message": "Expected /customer/products"
             },
             {
               "type": "visible",
-              "selector": "h1.page-title",
-              "error_message": "Products title not visible"
-            },
-            {
-              "type": "visible",
-              "selector": "a.btn-primary-fk[href*='products/new']",
-              "error_message": "Add product control not visible"
+              "selector": ".customer-filter-form",
+              "error_message": "Category filter form not visible"
             },
             {
               "type": "exists",
-              "selector": ".data-card",
-              "error_message": "Product list container missing"
+              "selector": "select[name='category_id']",
+              "error_message": "Category filter select missing"
             }
           ]
         }
