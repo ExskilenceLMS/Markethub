@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 
 from models import db
 from models.category import Category
+from models.product import Product
 from models.store import Store
 from models.user import ROLE_ADMIN, ROLE_CUSTOMER, ROLE_SELLER
 from repositories.user_repository import UserRepository
@@ -26,6 +27,6 @@ class AdminService:
             "total_customers": self._users.count_users_with_role(ROLE_CUSTOMER),
             "total_categories": self._count_rows(Category),
             "total_stores": self._count_rows(Store),
-            "total_products": 0,
+            "total_products": self._count_rows(Product),
             "total_orders": 0,
         }

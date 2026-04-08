@@ -520,6 +520,10 @@ main:has(.admin-layout) {
   padding: 1.5rem 1rem 2rem;
 }
 
+.staff-hub--wide {
+  max-width: 960px;
+}
+
 .staff-hub__nav {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));

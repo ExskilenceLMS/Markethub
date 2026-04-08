@@ -3,6 +3,7 @@ from flask import Blueprint, flash, redirect, render_template, request, session,
 from exceptions import AuthorizationException, NotFoundException, ValidationException
 from services.admin_service import AdminService
 from services.category_service import CategoryService
+from services.product_service import ProductService
 from services.store_service import StoreService
 from services.user_service import UserService
 from utils.form_errors import validation_exception_to_field_errors
@@ -188,6 +189,105 @@ def store_delete(sid):
     except NotFoundException:
         flash("Store not found.", "danger")
     return redirect(url_for("admin.store_list"))
+
+
+# —— Products ——
+
+
+@admin_bp.get("/products")
+def product_list():
+    uid = int(session["user_id"])
+    products = ProductService().list_for_role("admin", uid)
+    return render_template("admin/product_list.html", products=products)
+
+
+@admin_bp.route("/products/new", methods=["GET", "POST"])
+def product_new():
+    sellers = StoreService().list_sellers_for_dropdown()
+    categories = CategoryService().list_all_dicts()
+    uid = int(session["user_id"])
+    if request.method == "POST":
+        form = request.form.to_dict()
+        try:
+            ProductService().create(form, uid, "admin")
+            flash("Product created.", "success")
+            return redirect(url_for("admin.product_list"))
+        except ValidationException as exc:
+            return render_template(
+                "admin/product_form.html",
+                product=None,
+                sellers=sellers,
+                categories=categories,
+                show_seller_select=True,
+                form_errors=validation_exception_to_field_errors(exc),
+            )
+        except AuthorizationException as exc:
+            flash(exc.message, "danger")
+            return redirect(url_for("admin.product_list"))
+    return render_template(
+        "admin/product_form.html",
+        product=None,
+        sellers=sellers,
+        categories=categories,
+        show_seller_select=True,
+        form_errors=None,
+    )
+
+
+@admin_bp.route("/products/<int:pid>/edit", methods=["GET", "POST"])
+def product_edit(pid):
+    sellers = StoreService().list_sellers_for_dropdown()
+    categories = CategoryService().list_all_dicts()
+    uid = int(session["user_id"])
+    if request.method == "POST":
+        form = request.form.to_dict()
+        try:
+            ProductService().update(pid, form, uid, "admin")
+            flash("Product updated.", "success")
+            return redirect(url_for("admin.product_list"))
+        except ValidationException as exc:
+            try:
+                product = ProductService().get_dict(pid)
+            except NotFoundException:
+                flash("Product not found.", "danger")
+                return redirect(url_for("admin.product_list"))
+            return render_template(
+                "admin/product_form.html",
+                product=product,
+                sellers=sellers,
+                categories=categories,
+                show_seller_select=True,
+                form_errors=validation_exception_to_field_errors(exc),
+            )
+        except (NotFoundException, AuthorizationException) as exc:
+            flash(getattr(exc, "message", str(exc)), "danger")
+            return redirect(url_for("admin.product_list"))
+    try:
+        product = ProductService().get_dict(pid)
+    except NotFoundException:
+        flash("Product not found.", "danger")
+        return redirect(url_for("admin.product_list"))
+    return render_template(
+        "admin/product_form.html",
+        product=product,
+        sellers=sellers,
+        categories=categories,
+        show_seller_select=True,
+        form_errors=None,
+    )
+
+
+@admin_bp.post("/products/<int:pid>/delete")
+def product_delete(pid):
+    uid = int(session["user_id"])
+    try:
+        ProductService().delete(pid, uid, "admin")
+        flash("Product deleted.", "success")
+    except NotFoundException:
+        flash("Product not found.", "danger")
+    except AuthorizationException as exc:
+        flash(exc.message, "danger")
+    return redirect(url_for("admin.product_list"))
 
 
 # —— Staff / assignments overview ——

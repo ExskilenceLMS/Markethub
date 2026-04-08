@@ -7,6 +7,10 @@
     <h1 class="page-title">Staff dashboard</h1>
     <p class="admin-welcome">View data assigned to your seller account (read-only).</p>
     <nav class="staff-hub__nav">
+      <a class="staff-hub__card" href="{{ url_for('staff.product_list') }}">
+        <strong>My products</strong>
+        <span>Create and manage your catalog</span>
+      </a>
       <a class="staff-hub__card" href="{{ url_for('staff.store_readonly') }}">
         <strong>My stores</strong>
         <span>Stores you operate</span>

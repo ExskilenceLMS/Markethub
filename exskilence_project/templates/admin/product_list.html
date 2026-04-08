@@ -1,0 +1,49 @@
+{% extends "admin/base_admin.html" %}
+
+{% block title %}Products — Admin{% endblock %}
+
+{% block admin_content %}
+  <header class="admin-page-header admin-page-header--row">
+    <div>
+      <h1 class="page-title">Products</h1>
+      <p class="admin-welcome">Manage catalog items and assign sellers.</p>
+    </div>
+    <a class="btn-primary-fk btn-inline" href="{{ url_for('admin.product_new') }}">Add product</a>
+  </header>
+
+  <div class="data-card">
+    {% if products %}
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Seller</th>
+            <th>Price</th>
+            <th>Qty</th>
+            <th class="data-table__actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in products %}
+            <tr>
+              <td><strong>{{ p.name }}</strong></td>
+              <td>{{ p.category_name }}</td>
+              <td class="data-table__muted">{{ p.seller_name }}</td>
+              <td>₹{{ '%.2f'|format(p.price) }}</td>
+              <td>{{ p.quantity }}</td>
+              <td class="data-table__actions">
+                <a href="{{ url_for('admin.product_edit', pid=p.id) }}">Edit</a>
+                <form method="post" action="{{ url_for('admin.product_delete', pid=p.id) }}" class="inline-form" onsubmit="return confirm('Delete this product?');">
+                  <button type="submit" class="link-button danger">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="admin-welcome">No products yet.</p>
+    {% endif %}
+  </div>
+{% endblock %}
