@@ -8,22 +8,22 @@
         "isMandatory": true,
         "rules": [
           {
-            "file": "templates/customer/orders.html",
-            "title": "Customer order tracking page",
-            "description": "Tracking list should provide status filter, orders table, and details links.",
+            "file": "templates/admin/order_detail.html",
+            "title": "Admin workflow control UI",
+            "description": "Admin order detail must show status summary and update-status select workflow.",
             "points": 10,
-            "requiredElements": ["h1", "form", "select", "table", "th", "td", "a"],
-            "requiredIdentifiers": ["customer-hub", "customer-filter-form", "data-table"],
+            "requiredElements": ["h1", "dl", "dt", "dd", "form", "select", "button"],
+            "requiredIdentifiers": ["form-card", "customer-profile-dl", "btn-primary-fk"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           },
           {
-            "file": "templates/customer/order_detail.html",
-            "title": "Customer order detail tracking view",
-            "description": "Order detail should show status, total, and placed timestamp fields.",
+            "file": "templates/staff/order_detail.html",
+            "title": "Staff workflow control UI",
+            "description": "Staff order detail should provide controlled status update form with same workflow semantics.",
             "points": 8,
-            "requiredElements": ["h1", "dl", "dt", "dd", "a"],
-            "requiredIdentifiers": ["customer-hub", "customer-profile-dl", "page-title"],
+            "requiredElements": ["h1", "dl", "form", "select", "button", "label"],
+            "requiredIdentifiers": ["staff-hub", "form-card", "customer-profile-dl"],
             "error_message": "{requiredElements} not found",
             "error_message_identifiers": "{requiredIdentifiers} not found"
           }
@@ -34,10 +34,10 @@
         "rules": [
           {
             "file": "static/css/style.css",
-            "title": "Tracking UI selectors",
-            "description": "Styles should include filter form, badges, profile list, and data table for tracking screens.",
+            "title": "Order workflow selectors",
+            "description": "Order UI workflow screens require data table, badges, profile list and form-card styling.",
             "points": 10,
-            "requiredSelectors": [".customer-filter-form", ".data-table", ".badge--ok", ".customer-profile-dl"],
+            "requiredSelectors": [".form-card", ".badge--ok", ".customer-profile-dl", ".customer-filter-form"],
             "error_message": "{requiredSelectors} not found"
           }
         ]
@@ -50,28 +50,28 @@
       "timeout": 60000,
       "points": 48,
       "runTests": {
-        "test_guest_orders_list_redirects_to_login": "Guest Order Tracking Guard",
-        "test_customer_orders_list_shows_tracking_columns": "Customer Tracking List Columns",
-        "test_customer_orders_status_filter_works": "Customer Status Filter",
-        "test_customer_order_detail_displays_status_and_total": "Customer Order Detail Tracking",
-        "test_customer_cannot_track_other_customers_order": "Customer Order Access Control",
-        "test_admin_and_staff_order_lists_support_status_filter": "Admin and Staff Tracking Filters"
+        "test_guest_cannot_open_admin_order_detail": "Guest Blocked From Admin Workflow",
+        "test_admin_order_detail_shows_status_control_ui": "Admin Status Control UI",
+        "test_admin_can_transition_order_placed_to_shipped": "Admin Valid Status Transition",
+        "test_staff_invalid_transition_is_blocked": "Staff Invalid Transition Blocked",
+        "test_customer_cannot_post_status_update_to_order_routes": "Customer Cannot Update Status",
+        "test_status_filter_controls_exist_on_admin_and_staff_lists": "Admin Staff Filter UI"
       },
       "descriptions": {
-        "test_guest_orders_list_redirects_to_login": "Verifies guests cannot access /customer/orders.",
-        "test_customer_orders_list_shows_tracking_columns": "Verifies customer order history page renders status and details columns.",
-        "test_customer_orders_status_filter_works": "Verifies customer tracking list accepts status query filter.",
-        "test_customer_order_detail_displays_status_and_total": "Verifies customer order detail page shows status, total, and placed info.",
-        "test_customer_cannot_track_other_customers_order": "Verifies customers cannot open another customer's order detail.",
-        "test_admin_and_staff_order_lists_support_status_filter": "Verifies admin/staff order tracking pages support status filter display."
+        "test_guest_cannot_open_admin_order_detail": "Verifies guests cannot access admin order workflow route.",
+        "test_admin_order_detail_shows_status_control_ui": "Verifies admin order detail page renders status update controls.",
+        "test_admin_can_transition_order_placed_to_shipped": "Verifies admin can execute valid transition from Placed to Shipped.",
+        "test_staff_invalid_transition_is_blocked": "Verifies staff cannot jump directly from Placed to Delivered.",
+        "test_customer_cannot_post_status_update_to_order_routes": "Verifies customer role cannot post status updates to staff/admin routes.",
+        "test_status_filter_controls_exist_on_admin_and_staff_lists": "Verifies status filter controls are present on admin and staff order lists."
       },
       "error_messages": {
-        "test_guest_orders_list_redirects_to_login": "Guests must be redirected from customer order tracking.",
-        "test_customer_orders_list_shows_tracking_columns": "Customer order history must include tracking fields.",
-        "test_customer_orders_status_filter_works": "Customer order tracking filter should work.",
-        "test_customer_order_detail_displays_status_and_total": "Order detail tracking fields are missing.",
-        "test_customer_cannot_track_other_customers_order": "Customers must not track another user's order.",
-        "test_admin_and_staff_order_lists_support_status_filter": "Admin/staff tracking screens must support status filter."
+        "test_guest_cannot_open_admin_order_detail": "Guests must not access admin order detail workflow.",
+        "test_admin_order_detail_shows_status_control_ui": "Admin status control UI is missing.",
+        "test_admin_can_transition_order_placed_to_shipped": "Admin valid workflow transition failed.",
+        "test_staff_invalid_transition_is_blocked": "Invalid staff status transition should be blocked.",
+        "test_customer_cannot_post_status_update_to_order_routes": "Customers should not update order statuses on admin/staff routes.",
+        "test_status_filter_controls_exist_on_admin_and_staff_lists": "Status filter UI missing on admin/staff order lists."
       }
     },
     "dynamic": {
@@ -86,45 +86,45 @@
       "tests": [
         {
           "isMandatory": true,
-          "name": "Customer opens order tracking list",
-          "description": "Login as seeded customer and verify order list with filter controls.",
+          "name": "Admin opens order list workflow controls",
+          "description": "Login as seeded admin and verify order list status filter exists.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
-            { "type": "fill", "selector": "input[name='email']", "value": "alice@example.com" },
+            { "type": "fill", "selector": "input[name='email']", "value": "admin@example.com" },
             { "type": "fill", "selector": "input[name='password']", "value": "user123" },
             { "type": "click", "selector": "button.btn-primary-fk[type='submit']" },
             { "type": "wait", "duration": 2500 },
-            { "type": "click", "selector": "a[href='/customer/orders']" },
+            { "type": "click", "selector": "a[href='/admin/orders']" },
             { "type": "wait", "duration": 1800 }
           ],
           "assertions": [
-            { "type": "url", "value": "/customer/orders", "error_message": "Expected /customer/orders" },
-            { "type": "visible", "selector": ".customer-hub", "error_message": "Order tracking container missing" },
-            { "type": "exists", "selector": "form.customer-filter-form", "error_message": "Status filter form missing" },
-            { "type": "exists", "selector": "table.data-table", "error_message": "Order tracking table missing" }
+            { "type": "url", "value": "/admin/orders", "error_message": "Expected /admin/orders" },
+            { "type": "visible", "selector": "form.customer-filter-form", "error_message": "Status filter form missing" },
+            { "type": "exists", "selector": "table.data-table", "error_message": "Order list table missing" }
           ]
         },
         {
           "isMandatory": true,
-          "name": "Customer opens order detail from tracking list",
-          "description": "From orders list, open details link and verify detail page has status and totals.",
+          "name": "Admin opens order detail status workflow",
+          "description": "From admin orders list, open order detail and verify status select + save controls.",
           "path": "/login",
           "captureScreenshot": true,
           "actions": [
-            { "type": "fill", "selector": "input[name='email']", "value": "alice@example.com" },
+            { "type": "fill", "selector": "input[name='email']", "value": "admin@example.com" },
             { "type": "fill", "selector": "input[name='password']", "value": "user123" },
             { "type": "click", "selector": "button.btn-primary-fk[type='submit']" },
             { "type": "wait", "duration": 2500 },
-            { "type": "click", "selector": "a[href='/customer/orders']" },
+            { "type": "click", "selector": "a[href='/admin/orders']" },
             { "type": "wait", "duration": 1500 },
-            { "type": "click", "selector": "a[href*='/customer/orders/']" },
+            { "type": "click", "selector": "a[href*='/admin/orders/']" },
             { "type": "wait", "duration": 1800 }
           ],
           "assertions": [
-            { "type": "url", "value": "/customer/orders/", "error_message": "Expected order detail URL" },
-            { "type": "visible", "selector": ".customer-profile-dl", "error_message": "Order detail summary missing" },
-            { "type": "exists", "selector": "h1.page-title", "error_message": "Order detail title missing" }
+            { "type": "url", "value": "/admin/orders/", "error_message": "Expected admin order detail URL" },
+            { "type": "visible", "selector": "div.form-card", "error_message": "Workflow form card missing" },
+            { "type": "exists", "selector": "select#status[name='status']", "error_message": "Status select control missing" },
+            { "type": "exists", "selector": "button.btn-primary-fk[type='submit']", "error_message": "Save button missing" }
           ]
         }
       ]
