@@ -49,16 +49,16 @@ def _seed_user(role, name, password="pass123!", email=None):
     return user.id, user.email, password
 
 
-def _seed_product(name="InvItem", price="25.00", quantity=10):
+def _seed_product(name="WorkflowItem", price="30.00", quantity=8):
     from repositories.category_repository import CategoryRepository
     from repositories.product_repository import ProductRepository
 
-    seller_id, _, _ = _seed_user("seller", "Inventory Seller", password="sellerPass1")
+    seller_id, _, _ = _seed_user("seller", "Workflow Seller", password="sellerPass1")
     suffix = uuid.uuid4().hex[:8]
-    cat = CategoryRepository().create(f"InvCat_{suffix}", "Inventory tests")
+    cat = CategoryRepository().create(f"WorkflowCat_{suffix}", "Workflow tests")
     product = ProductRepository().create(
         name,
-        "Inventory test product",
+        "Order workflow test product",
         Decimal(price),
         quantity,
         cat.id,
@@ -68,140 +68,117 @@ def _seed_product(name="InvItem", price="25.00", quantity=10):
     return product.id
 
 
-def test_guest_cannot_access_cart(client):
-    """Guests should be redirected from customer cart."""
+def test_guest_order_place_redirects_to_login(client):
+    """Guest posting place-order is redirected to login."""
     try:
-        response = client.get("/customer/cart", follow_redirects=False)
+        response = client.post("/customer/orders/place", follow_redirects=False)
         assert response.status_code == 302
         assert "login" in response.headers.get("Location", "").lower()
     except Exception as error:
-        pytest.fail(f"Guest cart access guard check failed: {error}")
+        pytest.fail(f"Guest order place guard check failed: {error}")
 
 
-def test_place_order_reduces_stock_and_clears_cart(client):
-    """Placing order from cart deducts product stock and empties the cart."""
+def test_order_workflow_places_order_and_redirects(client):
+    """Cart to order workflow redirects to /customer/orders and creates order."""
     try:
-        customer_id, customer_email, pwd = _seed_user("customer", "Inventory Customer", password="custPass1")
+        customer_id, customer_email, pwd = _seed_user("customer", "Workflow Customer", password="custPass1")
         product_id = _seed_product(quantity=9)
-        _login_web(client, customer_email, pwd)
-
-        client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 4})
-        response = client.post("/customer/orders/place", follow_redirects=False)
-
-        assert response.status_code == 302
-        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/customer/orders"
-
-        from repositories.cart_repository import CartRepository
-        from repositories.order_repository import OrderRepository
-        from repositories.product_repository import ProductRepository
-
-        with app.app_context():
-            refreshed = ProductRepository().get_by_id(product_id)
-            assert refreshed is not None
-            assert refreshed.quantity == 5
-            assert len(OrderRepository().list_by_user_id(customer_id)) == 1
-            assert CartRepository().list_by_user_id(customer_id) == []
-    except Exception as error:
-        pytest.fail(f"Stock deduction and cart clear check failed: {error}")
-
-
-def test_place_order_blocks_when_quantity_exceeds_stock(client):
-    """Overselling is blocked when cart quantity is greater than available stock."""
-    try:
-        customer_id, customer_email, pwd = _seed_user("customer", "LowStock Customer", password="custPass2")
-        product_id = _seed_product(name="LowStockItem", quantity=2)
         _login_web(client, customer_email, pwd)
 
         client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 3})
         response = client.post("/customer/orders/place", follow_redirects=False)
 
         assert response.status_code == 302
-        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/customer/cart"
+        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/customer/orders"
+
+        from repositories.order_repository import OrderRepository
+
+        with app.app_context():
+            orders = OrderRepository().list_by_user_id(customer_id)
+            assert len(orders) == 1
+            assert orders[0].status == "Placed"
+    except Exception as error:
+        pytest.fail(f"Order placement workflow redirect check failed: {error}")
+
+
+def test_order_workflow_deducts_stock_and_clears_cart(client):
+    """Successful workflow deducts stock and clears all cart lines."""
+    try:
+        customer_id, customer_email, pwd = _seed_user("customer", "Workflow Customer2", password="custPass2")
+        product_id = _seed_product(name="WItem2", quantity=7)
+        _login_web(client, customer_email, pwd)
+
+        client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 4})
+        client.post("/customer/orders/place", follow_redirects=False)
 
         from repositories.cart_repository import CartRepository
-        from repositories.order_repository import OrderRepository
         from repositories.product_repository import ProductRepository
 
         with app.app_context():
             refreshed = ProductRepository().get_by_id(product_id)
             assert refreshed is not None
-            assert refreshed.quantity == 2
-            assert len(OrderRepository().list_by_user_id(customer_id)) == 0
-            assert len(CartRepository().list_by_user_id(customer_id)) == 1
+            assert refreshed.quantity == 3
+            assert CartRepository().list_by_user_id(customer_id) == []
     except Exception as error:
-        pytest.fail(f"Oversell prevention check failed: {error}")
+        pytest.fail(f"Workflow stock deduction and cart clear check failed: {error}")
 
 
-def test_product_service_rejects_negative_stock_quantity(client):
-    """Product service must reject negative inventory during product creation."""
+def test_order_workflow_prevents_oversell_and_keeps_cart(client):
+    """If requested qty exceeds stock, workflow must not create order and cart remains."""
     try:
-        from exceptions import ValidationException
-        from services.product_service import ProductService
-
-        admin_id, _, _ = _seed_user("admin", "Inventory Admin", password="adminPass1")
-        seller_id, _, _ = _seed_user("seller", "Inventory Seller2", password="sellerPass2")
-        from repositories.category_repository import CategoryRepository
-
-        category = CategoryRepository().create(f"NegQtyCat_{uuid.uuid4().hex[:8]}", None)
-
-        with pytest.raises(ValidationException):
-            ProductService().create(
-                {
-                    "name": "BadQty",
-                    "description": "bad",
-                    "price": "10.00",
-                    "quantity": "-1",
-                    "category_id": str(category.id),
-                    "seller_id": str(seller_id),
-                },
-                admin_id,
-                "admin",
-            )
-    except Exception as error:
-        pytest.fail(f"Negative quantity validation check failed: {error}")
-
-
-def test_customer_products_page_shows_stock_and_qty_input(client):
-    """Customer products page renders stock label and quantity input for cart actions."""
-    try:
-        _, customer_email, pwd = _seed_user("customer", "View Stock Customer", password="custPass3")
-        _seed_product(name="VisibleStock", quantity=6)
+        customer_id, customer_email, pwd = _seed_user("customer", "Workflow Customer3", password="custPass3")
+        product_id = _seed_product(name="WItem3", quantity=2)
         _login_web(client, customer_email, pwd)
 
-        response = client.get("/customer/products")
-        assert response.status_code == 200
-        html = response.get_data(as_text=True)
-        assert "Stock:" in html
-        assert "customer-cart__qty-input" in html
-        assert "Add to cart" in html
-    except Exception as error:
-        pytest.fail(f"Products stock display check failed: {error}")
+        client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 5})
+        response = client.post("/customer/orders/place", follow_redirects=False)
 
-
-def test_cart_update_quantity_rejects_zero(client):
-    """Updating cart line with zero quantity is rejected and line remains unchanged."""
-    try:
-        customer_id, customer_email, pwd = _seed_user("customer", "Cart Update Customer", password="custPass4")
-        product_id = _seed_product(name="UpdateQty", quantity=7)
-        _login_web(client, customer_email, pwd)
-
-        client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 2})
-        from repositories.cart_repository import CartRepository
-
-        with app.app_context():
-            line = CartRepository().list_by_user_id(customer_id)[0]
-            line_id = line.id
-
-        response = client.post(
-            f"/customer/cart/{line_id}/update",
-            data={"quantity": 0},
-            follow_redirects=False,
-        )
         assert response.status_code == 302
         assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/customer/cart"
 
+        from repositories.cart_repository import CartRepository
+        from repositories.order_repository import OrderRepository
+
         with app.app_context():
-            line = CartRepository().list_by_user_id(customer_id)[0]
-            assert line.quantity == 2
+            assert len(OrderRepository().list_by_user_id(customer_id)) == 0
+            assert len(CartRepository().list_by_user_id(customer_id)) == 1
     except Exception as error:
-        pytest.fail(f"Cart zero-quantity update guard check failed: {error}")
+        pytest.fail(f"Workflow oversell prevention check failed: {error}")
+
+
+def test_order_workflow_blocks_empty_cart(client):
+    """Empty cart placement redirects back to cart and creates no order."""
+    try:
+        customer_id, customer_email, pwd = _seed_user("customer", "Workflow EmptyCart", password="custPass4")
+        _login_web(client, customer_email, pwd)
+        response = client.post("/customer/orders/place", follow_redirects=False)
+
+        assert response.status_code == 302
+        assert urlparse(response.headers.get("Location", "")).path.rstrip("/") == "/customer/cart"
+
+        from repositories.order_repository import OrderRepository
+
+        with app.app_context():
+            assert OrderRepository().list_by_user_id(customer_id) == []
+    except Exception as error:
+        pytest.fail(f"Workflow empty-cart guard check failed: {error}")
+
+
+def test_customer_orders_list_shows_placed_order_after_workflow(client):
+    """After workflow success, /customer/orders renders order id and status."""
+    try:
+        _, customer_email, pwd = _seed_user("customer", "Workflow OrdersList", password="custPass5")
+        product_id = _seed_product(name="WItem4", quantity=6)
+        _login_web(client, customer_email, pwd)
+
+        client.post("/customer/cart/add", data={"product_id": product_id, "quantity": 2})
+        client.post("/customer/orders/place", follow_redirects=False)
+        response = client.get("/customer/orders")
+
+        assert response.status_code == 200
+        html = response.get_data(as_text=True)
+        assert "My orders" in html
+        assert "Placed" in html
+        assert "#" in html
+    except Exception as error:
+        pytest.fail(f"Orders list post-workflow check failed: {error}")
