@@ -1,38 +1,57 @@
 # Task 5: Registration & Login UI
 
-Browser flows use **`routes/web_routes.py`**. JSON clients keep using **`routes/auth_routes.py`** (`/api/auth/...`).
+## What is the task?
+Implement complete web authentication UI flows for login and registration with form validation feedback, role-aware redirects, and required auth page styling hooks.
 
-## Registration and login flow
+## Task requirements
+- Login page requirements (`GET /login`):
+  - render HTTP `200` with `auth-page` and `auth-card` wrappers.
+  - include POST form (`method="post"`), `input[name="email"]`, `input[name="password"]`.
+  - include primary submit button styled with `btn-primary-fk`.
+  - include visible link to register page.
+- Register page requirements (`GET /register`):
+  - render HTTP `200` with `auth-page` and `auth-card`.
+  - include fields `name`, `email`, `password`, and `confirm_password`.
+  - include role control `name="role"` (select/dropdown) with `customer` option.
+  - include visible link back to login page.
+- CSS requirements (`static/css/style.css`):
+  - include selectors `.auth-page`, `.auth-card`, `.btn-primary-fk`, and `.auth-footer-link`.
+- Web login behavior (`POST /login`):
+  - on invalid password/credentials, return HTTP `200` and re-render login page with error summary.
+  - show exact message `Invalid email or password`.
+  - render error UI hooks such as `form-errors`.
+- Web register behavior (`POST /register`):
+  - when `password` and `confirm_password` do not match, return HTTP `200` and show `Passwords do not match`.
+  - show field-level error for `confirm_password` (`err-confirm_password` or equivalent confirm_password error hook).
+  - reject non-customer self-registration (for example role `seller`) and show message containing `Self-registration is only allowed`.
+  - on valid customer registration, redirect with HTTP `302` to `/customer`.
+- Role/auth rules:
+  - self-service registration remains customer-only.
+  - login continues using session-based authentication.
+- Response contracts:
+  - web auth routes return HTML pages on validation failure and redirects on success.
+  - API auth routes from previous tasks keep existing JSON behavior unchanged.
+- Data/validation rules:
+  - validate confirm-password match on web registration.
+  - keep generic login failure message to avoid exposing whether an email exists.
+- HTML template structure requirements:
+  - maintain reusable template inheritance and shared layout from Task 4.
+  - include form structure and class hooks required above.
+- Layered responsibility boundaries:
+  - route/controller: read form data, call service, render/redirect.
+  - service: validation and auth business logic.
+  - repository: user data persistence/lookup only.
+  - utils/db: password helper, error mapping, database plumbing.
+- Carry-forward requirements from Tasks 1-4:
+  - keep Task 1 health endpoint contract unchanged.
+  - keep Task 2 API error envelope and status behavior unchanged.
+  - keep Task 3 API auth endpoints and session behavior unchanged.
+  - keep Task 4 base layout/header/footer structure and CSS hooks unchanged.
+- Local run and verification steps:
+  - open `/login` and `/register` to verify required fields/classes are present.
+  - submit wrong password on login and confirm error text appears on same page.
+  - submit mismatched passwords on register and confirm confirm_password error appears.
+  - register valid customer and confirm redirect to `/customer`.
 
-1. **GET** `/register` or `/login` renders a Jinja template extending **`base.html`** (no business logic in the template).
-2. **POST** submits `application/x-www-form-urlencoded` data to the same route.
-3. The route builds a **`dict`** and calls **`UserService.register`** or **`UserService.login`**.
-4. On success: **`set_user_session`**, **`flash`** (success), **redirect** to the role home (**admin → `/admin`**, **seller → `/staff`**, **customer → `/customer`**).
-5. On **`ValidationException`**: re-render the same page with **`form_errors`** (no redirect), using **`utils/form_errors.validation_exception_to_field_errors`** and **`templates/partials/form_errors.html`** macros—this is how “invalid login” and field errors are shown. **`flash`** is used for **success** after redirect.
-
-Registration sends **`confirm_password`**; the validator checks a match when `confirm_password` is present (omitted by the JSON API so existing API behaviour stays the same). **Role** dropdown includes admin/seller/customer; the service still allows **self-registration only for customer**—other choices return a **`role`** field error.
-
-## How the UI connects to backend services
-
-| Layer | Responsibility |
-| ----- | ---------------- |
-| Template | Layout, fields, links, display of `form_errors` and flashed messages only. |
-| Route | Read `request.form`, call service, set session / flash / redirect or render with errors. |
-| **UserService** | Validation (via **validators**), hashing, persistence via **UserRepository**. |
-
-No client-side validation logic is used beyond **`novalidate`** so the server remains authoritative.
-
-## How validation errors are shown
-
-- **`ValidationException.message`** and **`details`** (field names or structured hints) are normalized to a **`form_errors`** map.
-- **`form_error_summary`** renders **`_form`** (non-field / general messages, e.g. invalid login).
-- **`field_errors`** lists messages under the matching input and applies a **`user-error`** border class.
-
-## Consistent UI (Flipkart-style)
-
-**`static/css/style.css`** layers on **`base.css`**: primary blue **`#2874F0`**, light gray background **`#f1f3f6`**, white cards, blue header bar, full-width primary button on auth screens. Shared variables keep admin/staff/customer pages visually aligned with auth.
-
-## Assets
-
-- **`templates/auth/login.html`**, **`register.html`** — centered **`auth-page`** / **`auth-card`** layout.
-- **`static/css/style.css`** — theme overrides.
+## Objective of the task
+Deliver a learner-ready web auth experience with clear validation feedback and stable route behavior, while preserving all previously established API/auth contracts and layered architecture rules.
