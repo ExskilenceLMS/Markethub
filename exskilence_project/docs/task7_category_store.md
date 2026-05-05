@@ -1,45 +1,51 @@
 # Task 7: Category & Store UI (Structured Forms)
 
-## Category and store management flow
+## What is the task?
+Implement admin-side category and store management forms (with validation and redirects) plus seller read-only store visibility pages.
 
-1. **Admin** opens **Categories** or **Stores** from the admin sidebar (`/admin/categories`, `/admin/stores`).
-2. **List** views load data prepared in **`CategoryService.list_all_dicts()`** and **`StoreService.list_all_dicts()`** (plain dicts for templates).
-3. **Add / edit** forms POST to the same blueprint; **`routes/admin_routes.py`** builds a form dict (`request.form` / `getlist` for category checkboxes) and calls **`CategoryService.create/update`** or **`StoreService.create/update`**.
-4. On success, **flash** + **redirect** to the list. On **`ValidationException`**, the route re-renders the form with **`form_errors`** from **`validation_exception_to_field_errors`** (same pattern as auth).
+## Task requirements
+- Category form route behavior:
+  - `GET /admin/categories/new` (admin session) returns HTTP `200` with structured form.
+  - form must include `form-card`, `method="post"`, `input[name="name"]`, `textarea[name="description"]`.
+  - `POST /admin/categories/new` with valid data redirects (HTTP `302`) to `/admin/categories`.
+  - created category name must appear on `/admin/categories` list page.
+  - posting empty name must re-render form with `Category name is required` and validation UI hooks (`form-errors` or `field-error`).
+- Store form route behavior:
+  - `GET /admin/stores/new` (admin session) returns HTTP `200` with structured form.
+  - form must include `form-card`, `select[name="seller_id"]`, `input[name="category_ids"]` checkboxes inside `checkbox-grid`, and `input[name="is_active"]`.
+  - `POST /admin/stores/new` with valid values redirects (HTTP `302`) to `/admin/stores`.
+  - created store name must appear on `/admin/stores` list page.
+- Seller read-only behavior:
+  - authenticated seller can open `GET /staff/stores` and see stores view content (for example `Your stores`).
+- Required HTML structure:
+  - `templates/admin/category_form.html` must include `form`, `input`, `textarea`, `label`, `button` and hooks `form-card`, `name`, `description`.
+  - `templates/admin/store_form.html` must include `form`, `select`, `fieldset`, `input`, `label` and hooks `form-card`, `seller_id`, `checkbox-grid`.
+- CSS requirements (`static/css/style.css`):
+  - include selectors `.form-card`, `.checkbox-grid`, `.checkbox-label`, `.form-label-block`.
+- Role/auth rules:
+  - only admin can create categories/stores under `/admin/*`.
+  - seller can access read-only staff stores area.
+- Response expectations:
+  - valid admin create actions redirect to list routes.
+  - invalid submissions re-render same form with validation feedback.
+- Data/validation rules:
+  - category name is required.
+  - store creation requires valid seller/category selection handling.
+- Layered boundaries:
+  - route/controller: parse form inputs and redirect/render.
+  - service: validation and business rules for category/store creation.
+  - repository: category/store/user data access only.
+  - utils/db: shared helpers and persistence plumbing.
+- Carry-forward requirements from Tasks 1-6:
+  - keep health API contract unchanged.
+  - keep global API error envelope/exception behavior unchanged.
+  - keep auth API and web auth UI behavior unchanged.
+  - keep admin access guard and dashboard layout behavior unchanged.
+- Local run and verification steps:
+  - log in as admin and open `/admin/categories/new` and `/admin/stores/new`.
+  - submit valid category/store forms and verify redirect + list appearance.
+  - submit invalid category (empty name) and confirm validation message.
+  - log in as seller and open `/staff/stores` to confirm read-only page access.
 
-**Staff management** (`/admin/staff/manage`) shows each **seller** and their **stores** with **categories** and links to **edit store**—assignment changes happen through the **store form** (seller + category checkboxes).
-
-## Role-based access (admin vs seller)
-
-| Area | Admin | Seller |
-| ---- | ----- | ------ |
-| Create / edit / delete categories | Yes (`admin_bp` + `before_request`) | No |
-| Create / edit / delete stores | Yes | No |
-| View categories / stores | Yes | **Read-only** under **`/staff/categories`** and **`/staff/stores`** (`staff_bp` + seller `before_request`) |
-
-Sellers only see categories that appear on **their** stores (`CategoryService.list_for_seller`) and only **their** stores (`StoreService.list_for_seller`). The top **Staff** link goes to **`staff.dashboard`**.
-
-## Form validation (backend + UI)
-
-- **Validators:** **`validators/category_validator.py`**, **`validators/store_validator.py`** parse and check required fields (name, seller, etc.).
-- **Services** enforce rules: unique category name, seller must exist and have role **`seller`**, category IDs must exist.
-- Templates use **`novalidate`**, **`form_error_summary`**, and **`field_errors`**; no business rules in Jinja.
-
-## Relationships: store, seller, categories
-
-- **`Store`** has **`seller_id`** → **`users.id`** (the assigned seller/staff user).
-- **`Store`** ↔ **`Category`** is **many-to-many** via **`store_categories`** (`models/store.py`).
-- A **seller** may run **multiple stores**; each store can list **multiple categories** for merchandising / reporting. Admins define both links; sellers **view** the result on staff pages.
-
-## Files added or updated (reference)
-
-- **Models:** `models/category.py`, `models/store.py` (+ `store_categories` table).
-- **Repositories:** `repositories/category_repository.py`, `repositories/store_repository.py`; **`UserRepository.list_users_by_role`** for seller dropdown.
-- **Services:** `services/category_service.py`, `services/store_service.py`; **`AdminService`** stats include category/store counts.
-- **Routes:** `routes/admin_routes.py` (CRUD + staff overview), **`routes/staff_routes.py`** (read-only seller views); **`web_routes`** no longer defines `/staff`.
-- **Templates:** `admin/category_list.html`, `category_form.html`, `store_list.html`, `store_form.html`, `staff_management.html`; staff: `category_readonly.html`, `store_readonly.html`; updated **`staff/dashboard.html`**, **`partials/admin_sidebar.html`**.
-- **Schema:** `database/schema.sql` — `categories`, `stores`, `store_categories`.
-
-## Consistent UI
-
-**`static/css/style.css`** adds **data tables**, **form cards**, **badges**, **staff hub** cards, and aligns with the Flipkart-style primary blue already used on auth and admin shells.
+## Objective of the task
+Provide a production-style admin management UI for categories and stores with proper validation, redirects, and role-based access while preserving all previously delivered app behavior.
