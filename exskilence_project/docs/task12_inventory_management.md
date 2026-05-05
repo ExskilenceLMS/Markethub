@@ -1,36 +1,47 @@
-# Task 12: Inventory & stock management
+# Task 12: Inventory & Stock Management
 
-## Inventory overview
+## What is the task?
+Implement inventory safeguards for cart and order workflows so stock is displayed clearly, invalid quantities are blocked, and overselling is prevented during order placement.
 
-Inventory is managed using `products.quantity` as the source of truth. During order placement, cart quantities are validated against current stock and product stock is deducted in the same order transaction.
+## Task requirements
+- Cart/customer access behavior:
+  - guest users cannot access `/customer/cart` and must be redirected to login.
+- Stock deduction behavior:
+  - placing order from cart must deduct product stock by ordered quantity.
+  - placing order from cart must create order and clear cart on success.
+- Oversell prevention behavior:
+  - if requested cart quantity exceeds available stock, place-order must be blocked.
+  - blocked place-order must redirect to `/customer/cart`.
+  - when blocked, product stock must remain unchanged, no order should be created, and cart line should remain.
+- Product quantity validation behavior:
+  - product creation/update path must reject negative stock quantity values.
+- Customer catalog/cart UI requirements:
+  - products page must display stock text (`Stock:`), quantity input control, and `Add to cart` action.
+  - cart page must include quantity update form, total row, and place-order action controls.
+  - cart update with zero quantity must be rejected and existing line quantity must remain unchanged.
+- HTML structure requirements:
+  - `templates/customer/products.html` must include `ul`, `li`, `form`, `input`, `label`, `button`, `p` and hooks `customer-product-grid`, `customer-product-card__qty`, `customer-cart__qty-input`, `customer-product-card__cart-form`.
+  - `templates/customer/cart.html` must include `table`, `form`, `input`, `button`, `p` and hooks `customer-cart__qty-form`, `customer-cart__total`, `customer-cart__place-row`.
+- CSS requirements (`static/css/style.css`):
+  - include selectors `.customer-product-card__qty`, `.customer-cart__qty-input`, `.customer-cart__place-row`, `.customer-cart-card`.
+- Role/auth rules:
+  - only authenticated customers can perform cart and place-order actions.
+- Data/validation rules:
+  - quantity values for cart updates/orders must be positive.
+  - inventory must be checked before reducing stock.
+- Layered boundaries:
+  - route/controller: redirects, form parsing, page rendering.
+  - service: inventory/business validation and order orchestration.
+  - repository: stock/cart/order persistence and transactional writes.
+  - utils/db: shared DB/session handling.
+- Carry-forward requirements from Tasks 1-11:
+  - preserve all prior API contracts, auth behavior, cart/order flow, and admin/staff/customer UI behavior.
+  - keep Task 11 order status and ownership controls unchanged.
+- Local run and verification steps:
+  - open `/customer/products` and verify stock label + quantity input appear.
+  - add item to cart, place order, and verify redirect to `/customer/orders` with stock reduction.
+  - test over-quantity scenario and confirm redirect to cart with no stock/order mutation.
+  - test cart quantity update to `0` and confirm existing line quantity stays unchanged.
 
-## Stock validation logic
-
-- `services/inventory_service.py` introduces `InventoryService`.
-- `InventoryService.ensure_cart_items_have_stock(cart_rows)` checks:
-  - cart is not empty
-  - each referenced product exists
-  - each requested quantity is valid (`> 0`)
-  - requested quantity does not exceed available stock
-- `validators/inventory_validator.py` contains quantity validation for inventory checks.
-
-## Overselling prevention
-
-- Pre-check: `OrderService.place_from_cart` now delegates stock validation to `InventoryService`.
-- Transaction-time guard: `OrderRepository.create_from_cart_lines` re-checks stock before decrementing in the same DB transaction.
-- If stock is insufficient at either step, a `ValidationException` is raised and order placement is blocked.
-
-## Interaction with order system
-
-- `OrderService.place_from_cart` flow:
-  1. validate user exists
-  2. read cart rows and total
-  3. validate inventory via `InventoryService`
-  4. call `OrderRepository.create_from_cart_lines`
-- `OrderRepository.create_from_cart_lines` performs:
-  - create order
-  - deduct stock (`products.quantity -= cart.quantity`)
-  - clear cart rows
-  - commit
-
-This keeps inventory and order placement consistent and prevents overselling for cart-based orders.
+## Objective of the task
+Guarantee accurate and safe inventory behavior across cart and checkout actions by enforcing stock constraints, preventing oversell, and keeping customer UI controls consistent.
