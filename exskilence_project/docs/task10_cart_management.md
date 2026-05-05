@@ -1,45 +1,49 @@
-# Task 10: Cart management
+# Task 10: Cart Management
 
-## Overview
+## What is the task?
+Implement customer cart workflows for add, view, update quantity, and clear actions with correct redirects, totals, and UI hooks.
 
-Each **customer** has a **persistent cart** stored in MySQL (`cart_items`): one row per user and product (unique pair), with a quantity. Customers add lines from the product catalog, update quantities, remove lines, or clear the cart. Totals are computed in the service layer from product prices.
+## Task requirements
+- Route/auth behavior:
+  - `GET /customer/cart` must redirect guests to login.
+  - logged-in customer can access `GET /customer/cart` with HTTP `200`.
+- Cart page requirements (`templates/customer/cart.html`):
+  - render `customer-hub`, `customer-cart-card`, and `customer-cart__total` hooks.
+  - include cart title/content (`Cart`).
+  - when empty, show `Your cart is empty`.
+  - include line table/update form controls when cart has items.
+- Add-to-cart behavior:
+  - `POST /customer/cart/add` must redirect (HTTP `302`) to `/customer/products`.
+  - adding same `product_id` multiple times must merge into one cart line by increasing quantity.
+  - cart total must reflect merged quantity calculation.
+- Update/clear behavior:
+  - `POST /customer/cart/<line_id>/update` must update quantity and refresh rendered total.
+  - `POST /customer/cart/clear` must remove all lines and show empty-state message.
+- Products page add-to-cart form requirements (`templates/customer/products.html`):
+  - each product card must include add-to-cart form posting `product_id` and `quantity`.
+  - include hooks `customer-product-card__cart-form` and `customer-cart__qty-input`.
+- HTML structure requirements:
+  - `templates/customer/cart.html` must include `header`, `h1`, `form`, `table`, `th`, `td`, `button` plus required identifiers.
+  - `templates/customer/products.html` must include `form`, `input`, `button`, `label`, `ul`, `li` with required identifiers above.
+- CSS requirements (`static/css/style.css`):
+  - include selectors `.customer-cart-card`, `.customer-product-card__cart-form`, `.customer-cart__total`, `.customer-cart__qty-input`.
+- Role/auth rules:
+  - only authenticated customers can perform cart actions.
+- Data/validation rules:
+  - add/update quantities must be positive.
+  - add must target valid product.
+- Layered boundaries:
+  - route/controller: read form data, call service, redirect/render.
+  - service: cart business rules (merge, totals, validation orchestration).
+  - repository: cart row persistence/query only.
+  - utils/db: shared DB/session support.
+- Carry-forward requirements from Tasks 1-9:
+  - preserve previous API contracts, auth flows, admin/staff/product features, and customer dashboard/catalog behavior.
+- Local run and verification steps:
+  - as customer, open `/customer/cart` and verify empty state.
+  - add a product from `/customer/products` and verify redirect to products and cart totals.
+  - add same product twice and confirm merged quantity.
+  - update line quantity and clear cart; verify total/empty state updates.
 
-## Persistent cart
-
-- Cart rows survive logout and login (`user_id` ties lines to the account).
-- Adding the same product again **merges** into the existing row (quantities sum).
-- Removing a product or clearing the cart deletes rows; no session-only cart.
-
-## Cart operations flow
-
-| Operation | Route (customer) | Service | Repository |
-|-----------|------------------|---------|------------|
-| View summary | `GET /customer/cart` | `CartService.get_cart_summary` | `list_by_user_id` |
-| Add | `POST /customer/cart/add` | `CartService.add` | `add_item` (merge) |
-| Update qty | `POST /customer/cart/<line_id>/update` | `CartService.update_line` | `update_quantity` |
-| Remove line | `POST /customer/cart/<line_id>/remove` | `CartService.remove_line` | `remove_item` |
-| Clear | `POST /customer/cart/clear` | `CartService.clear` | `clear_for_user` |
-
-Routes only parse `request.form`, call services, flash, and redirect (or render the cart page). **No** SQL, **no** business rules, **no** inline validation in routes.
-
-## Validation rules
-
-| Rule | Where |
-|------|--------|
-| `quantity` integer and **> 0** (add / update) | `validators/cart_validator.py` |
-| `product_id` present and **> 0** (add) | `validators/cart_validator.py` |
-| Product exists in DB | `CartService.add` via `ProductRepository.get_by_id` → `ValidationException` |
-| Cart line belongs to current user | `CartRepository.get_by_id_for_user` → `NotFoundException` if missing |
-
-Stock limits are **not** enforced in this task (only existence and positive quantity).
-
-## Model and schema
-
-- Model: `models/cart_item.py` (`CartItem`), table `cart_items`.
-- DDL: `database/schema.sql` (FKs to `users`, `products`, `ON DELETE CASCADE`).
-- Seed sample lines: `database/seed_data.sql` (Alice + two seed products).
-
-## Related UI
-
-- `templates/customer/cart.html` — line table, subtotals, grand total, clear/remove/update.
-- `templates/customer/products.html` — “Add to cart” POST with `product_id`, `quantity`, optional `redirect_category_id`.
+## Objective of the task
+Deliver a reliable customer cart experience with stable quantity and total behavior, clear UI structure, and strict customer-only access without breaking earlier flows.
