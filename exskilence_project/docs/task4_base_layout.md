@@ -1,51 +1,57 @@
 # Task 4: Base Layout, Template Structure & UI Validation
 
-Aligned with the MarketHub LLD (`docs/e_commerce.md`). Server-rendered pages live under the same Flask app as JSON APIs; routes call **services** for validation and persistence, templates only **display** data and errors.
+## What is the task?
+Build the shared web UI foundation with a reusable base layout, authentication pages, and global styling. This task adds server-rendered HTML flow while keeping API contracts and layered backend architecture from earlier tasks unchanged.
 
-## Template inheritance (Jinja2)
+## Task requirements
+- Implement web routes/pages with these behaviors:
+  - `GET /` returns HTTP `200` and renders shared layout.
+  - `GET /login` returns HTTP `200` and renders login form.
+  - `GET /register` returns HTTP `200` and renders registration form.
+  - `POST /login` with valid credentials returns redirect to `/` (HTTP `302`).
+- Base template requirements (`templates/base.html`):
+  - include `html`, `head`, `body`, and `main` elements.
+  - include shared header and footer regions that render `site-header` and `site-footer`.
+  - include shared stylesheet `base.css`.
+  - include flash-messages partial in base template.
+- Login template requirements (`templates/auth/login.html`):
+  - include `form` with `method="post"`.
+  - include `input[name="email"]` and `input[name="password"]`.
+  - include `button[type="submit"]`.
+  - include register navigation link.
+  - include styling hooks using `card` and `btn`.
+- Register template requirements:
+  - show `Create account`.
+  - include `input[name="name"]`, `input[name="email"]`, `input[name="password"]`.
+  - include role field `name="role"` and customer option/value.
+  - render with shared layout (`site-header` and `site-footer`).
+- CSS requirements (`static/css/base.css`):
+  - include selectors `.site-header`, `.site-footer`, `main`, `.card`, and `.btn`.
+- Route behavior and auth expectations:
+  - registration + logout + login flow must allow the same user to return to home page.
+  - successful web login should redirect to home and not to login page.
+- Response contract:
+  - web pages use HTML responses and redirects.
+  - API endpoints from earlier tasks keep their existing JSON envelope behavior.
+- Role/auth rules:
+  - keep customer-only self-registration rule.
+  - keep session-based auth behavior for authenticated API routes.
+- Data/validation rules:
+  - preserve server-side validation and existing generic invalid-login message.
+- Layered boundaries:
+  - controller/route: HTTP forms, redirects, template rendering only.
+  - service: business logic and auth rules.
+  - repository: data access only.
+  - utils/db layers: shared helpers and database operations.
+- Carry-forward requirements from Tasks 1-3:
+  - keep `GET /api/health` response contract unchanged.
+  - keep global JSON error handling for unknown `/api/*` routes.
+  - keep Task 3 auth API behavior and status codes unchanged.
+- Local run and verification steps:
+  - start app from `exskilence_project/`.
+  - open `/` and confirm header, main content area, and footer appear.
+  - open `/login` and verify POST form fields and submit button.
+  - register a customer on `/register`, logout, login, and confirm redirect to `/`.
 
-Child templates use `{% extends "base.html" %}` and fill `{% block content %}` (and optional blocks like `title`, `head_extra`). Shared chrome (navbar, footer, flash area) lives in **`templates/base.html`**, so pages stay consistent without copying markup.
-
-## Why a base layout matters
-
-One layout enforces the same navigation, footer, and message area everywhere. New screens only implement `content` (and related blocks), which scales as admin, staff, and customer areas grow.
-
-## Flash messages
-
-Server code calls `flash(message, category)` (e.g. `success`, `warning`, `danger`). **`templates/partials/flash_messages.html`** uses `get_flashed_messages(with_categories=true)` and renders a dismissible-style strip per category. Flashes are consumed on the next request that renders the layout—ideal for redirects after login/logout.
-
-## Showing backend validation in the UI
-
-- **No business rules in templates.** Forms POST to routes; **`UserService`** raises **`ValidationException`** with `message` and optional **`details`** (field names or structures).
-- **`utils/form_errors.py`** maps exceptions to a **`form_errors`** dict: `field_name -> [messages]` and **`_form`** for non-field / general errors.
-- **`templates/partials/form_errors.html`** defines macros:
-  - **`form_error_summary`**: general errors (`_form` only).
-  - **`field_errors`**: list under a specific input; inputs get a `user-error` class when that field has errors.
-
-HTML forms use **`novalidate`** so the browser does not override server-driven validation; the service remains the source of truth.
-
-## Role-based UI rendering
-
-**`session`** (populated after login) exposes `role`. **`templates/partials/navbar.html`** uses Jinja `{% if session.get('role') == 'admin' %}` (and seller/customer) to show only relevant links. Unauthorized areas (e.g. `/admin`) are still enforced in **`routes/web_routes.py`** via **`UserService.require_roles`**, which raises **`AuthorizationException`**—the route flashes a message and redirects to login.
-
-## File map
-
-| Path | Role |
-| ---- | ---- |
-| `templates/base.html` | Root layout, blocks, static CSS |
-| `templates/partials/navbar.html` | Role-aware nav + auth links |
-| `templates/partials/footer.html` | Footer |
-| `templates/partials/flash_messages.html` | Global flashes |
-| `templates/partials/form_errors.html` | Error macros |
-| `templates/auth/login.html`, `register.html` | Auth forms |
-| `templates/admin/`, `staff/`, `customer/` | Sample role pages |
-| `routes/web_routes.py` | HTML routes (calls `UserService`, passes `form_errors`) |
-| `static/css/base.css` | Shared styles |
-
-## URLs (HTML)
-
-- `/` — Home  
-- `/login`, `/register`, `/logout` — Session auth  
-- `/admin`, `/staff`, `/customer` — Role placeholders (guarded)
-
-JSON APIs remain under `/api/…`.
+## Objective of the task
+Create a consistent and reusable web presentation layer (templates + CSS + auth form flow) so future UI features can be built quickly without breaking existing API and auth behavior.
